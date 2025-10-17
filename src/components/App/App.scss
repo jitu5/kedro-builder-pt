@@ -54,11 +54,45 @@
     }
   }
 
+  &__header-project-controls {
+    margin-left: 240px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  &__new-project-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: transparent;
+    border: 0;
+    color: var(--color-text);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: var(--color-bg-hover);
+      border-color: var(--color-primary);
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+
+  &__header-divider {
+    width: 1px;
+    height: 32px;
+    background: var(--color-text-alt);
+  }
+
   &__project-name-container {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-top: 0.25rem;
   }
 
   &__project-name {

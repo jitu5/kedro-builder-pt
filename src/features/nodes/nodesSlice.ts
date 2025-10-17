@@ -13,18 +13,31 @@ const nodesSlice = createSlice({
   name: 'nodes',
   initialState,
   reducers: {
-    addNode: (state, action: PayloadAction<{ type: NodeType; position: { x: number; y: number } }>) => {
-      const id = `node-${Date.now()}`;
-      const newNode: KedroNode = {
-        id,
-        name: 'Unnamed Node',
-        type: action.payload.type,
-        inputs: [],
-        outputs: [],
-        position: action.payload.position,
-      };
-      state.byId[id] = newNode;
-      state.allIds.push(id);
+    addNode: {
+      reducer: (state, action: PayloadAction<KedroNode>) => {
+        const node = action.payload;
+        state.byId[node.id] = node;
+        if (!state.allIds.includes(node.id)) {
+          state.allIds.push(node.id);
+        }
+      },
+      prepare: (payload: KedroNode | { type: NodeType; position: { x: number; y: number } }) => {
+        // If it's a full node, use it directly
+        if ('id' in payload) {
+          return { payload };
+        }
+        // Otherwise, create a new node
+        const id = `node-${Date.now()}`;
+        const newNode: KedroNode = {
+          id,
+          name: 'Unnamed Node',
+          type: payload.type,
+          inputs: [],
+          outputs: [],
+          position: payload.position,
+        };
+        return { payload: newNode };
+      },
     },
     updateNode: (
       state,
@@ -91,6 +104,12 @@ const nodesSlice = createSlice({
     hoverNode: (state, action: PayloadAction<string | null>) => {
       state.hovered = action.payload;
     },
+    clearNodes: (state) => {
+      state.byId = {};
+      state.allIds = [];
+      state.selected = [];
+      state.hovered = null;
+    },
   },
 });
 
@@ -105,6 +124,7 @@ export const {
   selectNodes,
   clearSelection,
   hoverNode,
+  clearNodes,
 } = nodesSlice.actions;
 
 export default nodesSlice.reducer;

@@ -39,6 +39,10 @@ const projectSlice = createSlice({
     setLastSaved: (state, action: PayloadAction<number>) => {
       state.lastSaved = action.payload;
     },
+    clearProject: (state) => {
+      state.current = null;
+      state.lastSaved = null;
+    },
   },
 });
 
@@ -48,6 +52,7 @@ export const {
   updateProject,
   setSavedList,
   setLastSaved,
+  clearProject,
 } = projectSlice.actions;
 
 export default projectSlice.reducer;

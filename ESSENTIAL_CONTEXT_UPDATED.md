@@ -1,11 +1,11 @@
 # Essential Context for Kedro Builder - Current State
 
 ## Project Status
-- **Completed:** Phases 1-4.5 (Core Builder + UX Enhancement)
-- **Latest:** Tutorial (5 steps) + Walkthrough (4 steps) + Project Setup
+- **Completed:** Phases 1-5 (Core Builder + UX + localStorage Persistence)
+- **Latest:** localStorage auto-save/load system + Project metadata (id, description, timestamps)
 - **Dev Server:** http://localhost:5179/ (running, no errors)
 - **Stack:** Vite 5.4.8, React 18, TypeScript (strict), Node 18.20.1
-- **Last Updated:** 2025-10-16 (Session: Walkthrough System Complete)
+- **Last Updated:** 2025-10-17 (Session: localStorage Persistence Complete)
 - **Documentation:** See PROJECT_ARCHITECTURE.md for comprehensive overview
 
 ## Core Dependencies
@@ -33,7 +33,11 @@
 ## Redux Store Structure
 ```typescript
 {
-  project: { name, description, metadata, directory }
+  project: {
+    current: KedroProject | null,  // { id, name, description, pythonPackage, pipelineName, createdAt, updatedAt }
+    savedList: ProjectMetadata[],
+    lastSaved: number | null
+  }
   nodes: { byId: {}, allIds: [], selected: [] }  // Array for multi-select
   datasets: { byId: {}, allIds: [], selected: null }
   connections: { byId: {}, allIds: [], selected: [] }  // Array for multi-select
@@ -47,7 +51,7 @@
     walkthroughStep,           // Current step (1-4)
     walkthroughCompleted,      // Persisted to localStorage
     showProjectSetup,          // Project setup modal state
-    projectCreated             // Track if project has been created
+    hasActiveProject           // Track if project has been created
   }
   validation: { errors: [], warnings: [], isValidating }
   theme: { current: 'light' | 'dark' }
@@ -59,6 +63,17 @@
 type NodeType = 'data_ingestion' | 'data_processing' | 'model_training' | 'model_evaluation' | 'custom';
 type DatasetType = 'csv' | 'parquet' | 'json' | 'excel' | 'pickle' | 'memory' | 'sql';
 type DataLayer = '01_raw' | '02_intermediate' | '03_primary' | '04_feature' | '05_model_input' | '06_models' | '07_model_output' | '08_reporting';
+
+// KedroProject - Core project metadata
+interface KedroProject {
+  id: string;                    // "project-{timestamp}"
+  name: string;                  // "my-first-project" (kebab-case)
+  description: string;           // User-provided description
+  pythonPackage: string;         // "my_first_project" (snake_case for Python imports)
+  pipelineName: string;          // "__default__" or custom pipeline name
+  createdAt: number;             // Timestamp
+  updatedAt: number;             // Timestamp
+}
 
 interface KedroNode {
   id: string;
@@ -143,12 +158,37 @@ src/
 - **Reset:** `isDraggingOver` reset to false on drop/dragLeave
 - **Z-Index:** EmptyState z-index: 1 (below walkthrough)
 
-### Project Setup Modal
-- **Validation:** Real-time validation for project name and directory
+### Project Setup Modal (Phase 5 Update)
+- **Validation:** Real-time validation for project name (removed directory field)
 - **Pattern:** Alphanumeric, hyphens, underscores only (no spaces)
-- **Browser API:** File System Access API for directory picker with fallback
+- **Fields:** Name (required) + Description (optional)
+- **Auto-generated:** Project ID (`project-${timestamp}`), createdAt, updatedAt
 - **Keyboard:** Enter to submit, Escape to cancel
 - **Theme Support:** CSS variables for colors
+
+### localStorage Persistence System (Phase 5 - NEW)
+- **Storage Keys:**
+  - `kedro_builder_current_project` - Project + pipeline state
+  - `kedro_builder_theme` - Theme preference (light/dark)
+  - `kedro_builder_tutorial_completed` - Tutorial completion
+  - `kedro_builder_walkthrough_completed` - Walkthrough completion
+- **Auto-save:** Debounced 500ms after any state change
+- **Auto-load:** On app start, loads saved project into Redux
+- **Middleware:** Custom Redux middleware triggers saves on specific actions
+- **Data Structure:**
+  ```typescript
+  {
+    project: { id, name, description, pythonPackage, pipelineName, createdAt, updatedAt },
+    nodes: KedroNode[],
+    datasets: KedroDataset[],
+    connections: KedroConnection[]
+  }
+  ```
+- **Size Capacity:** 5MB browser limit = ~5,000-10,000 nodes (sufficient for any realistic pipeline)
+- **Utility Functions:** `saveProjectToLocalStorage()`, `loadProjectFromLocalStorage()`, `clearProjectFromLocalStorage()`
+- **New Project:** "New Project" button clears Redux + localStorage, confirms before clearing
+- **Theme Persistence:** Saves immediately on theme change, loads on app start
+- **Benefits:** No work lost on refresh, instant persistence, works offline
 
 ### Previous Bug Fixes
 1. **Dataset Position Updates:** Added `updateDatasetPosition` action, ID-based routing
@@ -230,6 +270,32 @@ const targetElement = document.querySelector(`[data-walkthrough="${step.target}"
 .walkthrough-overlay__modal { z-index: 100000; }
 ```
 
+### localStorage Auto-save Pattern (Phase 5 - IMPORTANT)
+```typescript
+// Auto-save middleware (src/store/middleware/autoSaveMiddleware.ts)
+const SAVE_TRIGGER_ACTIONS = [
+  'project/createProject', 'project/updateProject',
+  'nodes/addNode', 'nodes/updateNode', 'nodes/deleteNode',
+  'datasets/addDataset', 'datasets/updateDataset',
+  'connections/addConnection', 'connections/deleteConnection'
+];
+
+// Debounced save (500ms)
+setTimeout(() => {
+  const state = store.getState();
+  saveProjectToLocalStorage(state);
+}, 500);
+
+// Auto-load on app start (App.tsx)
+const savedProject = loadProjectFromLocalStorage();
+if (savedProject) {
+  dispatch(loadProject(savedProject.project));
+  savedProject.nodes.forEach(node => dispatch(addNode(node)));
+  savedProject.datasets.forEach(dataset => dispatch(addDataset(dataset)));
+  savedProject.connections.forEach(conn => dispatch(addConnection(conn)));
+}
+```
+
 ## Working Features
 ### Phase 1-4 (Core Builder)
 ✅ Drag nodes/datasets from sidebar
@@ -261,6 +327,18 @@ const targetElement = document.querySelector(`[data-walkthrough="${step.target}"
 ✅ Consistent handle colors (#c0c5c9)
 ✅ Z-index hierarchy for layered modals
 
+### Phase 5: localStorage Persistence (Completed - NEW!)
+✅ Project metadata with id, description, timestamps
+✅ Auto-save middleware (debounced 500ms)
+✅ Auto-load on app start
+✅ localStorage utility functions
+✅ Project setup modal updated (removed directory, added description)
+✅ New Project button (clears all state)
+✅ Overloaded addNode/addDataset actions (accept full objects or create new)
+✅ Clear actions for all slices (clearProject, clearNodes, clearDatasets, clearConnections)
+✅ Persist entire pipeline: project + nodes + datasets + connections
+✅ No work lost on browser refresh
+
 ## Files to Re-Read When Needed
 - Component implementations: Can use Read tool
 - Documentation: PHASE_*_COMPLETE.md files
@@ -268,14 +346,14 @@ const targetElement = document.querySelector(`[data-walkthrough="${step.target}"
 
 ## Next Steps (Remaining Phases)
 
-### Phase 5: Validation System
+### Phase 6: Validation System (NEXT)
 - Circular dependency detection
 - Orphaned nodes/datasets check
 - Type compatibility validation
 - Missing input/output warnings
 - Validation panel with error/warning lists
 
-### Phase 6: Code Generation & Preview
+### Phase 7: Code Generation & Preview
 - Handlebars templates (catalog.yml, nodes.py, pipeline.py)
 - Syntax-highlighted code preview
 - Live updates as pipeline changes
@@ -287,11 +365,11 @@ const targetElement = document.querySelector(`[data-walkthrough="${step.target}"
 - Include all data layers, conf/, src/ folders
 - Download button functionality
 
-### Phase 8: Autosave & Storage
-- localStorage autosave every 30s
-- Project save/load/export
-- Import from JSON
-- Project list management
+### Phase 8: Export & Multi-Project
+- Export project as JSON file (download)
+- Import project from JSON file
+- Multi-project support in localStorage
+- Project list management UI
 
 ### Phase 9: Advanced Features
 - Undo/redo with Redux middleware

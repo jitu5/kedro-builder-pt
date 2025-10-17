@@ -6,6 +6,7 @@ import connectionsReducer from '../features/connections/connectionsSlice';
 import uiReducer from '../features/ui/uiSlice';
 import validationReducer from '../features/validation/validationSlice';
 import themeReducer from '../features/theme/themeSlice';
+import { autoSaveMiddleware } from './middleware/autoSaveMiddleware';
 
 export const store = configureStore({
   reducer: {
@@ -23,7 +24,7 @@ export const store = configureStore({
         // Ignore these action types
         ignoredActions: ['persist/PERSIST'],
       },
-    }),
+    }).concat(autoSaveMiddleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

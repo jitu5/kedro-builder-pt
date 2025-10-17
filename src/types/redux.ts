@@ -50,8 +50,6 @@ export interface UIState {
   // Project setup state
   showProjectSetup: boolean;
   hasActiveProject: boolean;
-  projectName: string;
-  projectDirectory: string;
 
   // UI component state
   selectedComponent: { type: 'node' | 'dataset'; id: string } | null;

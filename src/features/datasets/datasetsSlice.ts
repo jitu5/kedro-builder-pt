@@ -12,14 +12,27 @@ const datasetsSlice = createSlice({
   name: 'datasets',
   initialState,
   reducers: {
-    addDataset: (state, action: PayloadAction<Omit<KedroDataset, 'id'>>) => {
-      const id = `dataset-${Date.now()}`;
-      const newDataset: KedroDataset = {
-        id,
-        ...action.payload,
-      };
-      state.byId[id] = newDataset;
-      state.allIds.push(id);
+    addDataset: {
+      reducer: (state, action: PayloadAction<KedroDataset>) => {
+        const dataset = action.payload;
+        state.byId[dataset.id] = dataset;
+        if (!state.allIds.includes(dataset.id)) {
+          state.allIds.push(dataset.id);
+        }
+      },
+      prepare: (payload: KedroDataset | Omit<KedroDataset, 'id'>) => {
+        // If it has an id, use it directly
+        if ('id' in payload && payload.id) {
+          return { payload: payload as KedroDataset };
+        }
+        // Otherwise, create a new dataset with generated id
+        const id = `dataset-${Date.now()}`;
+        const newDataset: KedroDataset = {
+          id,
+          ...payload,
+        };
+        return { payload: newDataset };
+      },
     },
     updateDataset: (
       state,
@@ -53,6 +66,11 @@ const datasetsSlice = createSlice({
     selectDataset: (state, action: PayloadAction<string | null>) => {
       state.selected = action.payload;
     },
+    clearDatasets: (state) => {
+      state.byId = {};
+      state.allIds = [];
+      state.selected = null;
+    },
   },
 });
 
@@ -62,6 +80,7 @@ export const {
   updateDatasetPosition,
   deleteDataset,
   selectDataset,
+  clearDatasets,
 } = datasetsSlice.actions;
 
 export default datasetsSlice.reducer;

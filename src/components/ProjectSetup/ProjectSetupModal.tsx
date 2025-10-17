@@ -1,15 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { createProject, closeProjectSetup } from '../../features/ui/uiSlice';
+import { createProject as createProjectAction } from '../../features/project/projectSlice';
+import { closeProjectSetup, setHasActiveProject } from '../../features/ui/uiSlice';
 import './ProjectSetupModal.scss';
 
 export const ProjectSetupModal: React.FC = () => {
   const dispatch = useDispatch();
   const [projectName, setProjectName] = useState('my-first-project');
-  const [directory, setDirectory] = useState('');
+  const [description, setDescription] = useState('');
   const [nameError, setNameError] = useState('');
-  const [directoryError, setDirectoryError] = useState('');
-  const directoryInputRef = useRef<HTMLInputElement>(null);
 
   // Validate project name (alphanumeric, hyphens, underscores, no spaces)
   const validateProjectName = (name: string): boolean => {
@@ -25,41 +24,23 @@ export const ProjectSetupModal: React.FC = () => {
     return true;
   };
 
-  // Validate directory
-  const validateDirectory = (dir: string): boolean => {
-    if (!dir.trim()) {
-      setDirectoryError('Save directory is required');
-      return false;
-    }
-    setDirectoryError('');
-    return true;
-  };
-
-  const handleBrowse = async () => {
-    try {
-      // Check if File System Access API is supported
-      if ('showDirectoryPicker' in window) {
-        // @ts-ignore - TypeScript may not have types for this API yet
-        const dirHandle = await window.showDirectoryPicker();
-        setDirectory(dirHandle.name);
-        setDirectoryError('');
-      } else {
-        // Fallback: Focus on input for manual entry
-        directoryInputRef.current?.focus();
-        alert('Please enter the directory path manually. Browser does not support directory picker.');
-      }
-    } catch (error) {
-      // User cancelled or error occurred
-      console.log('Directory selection cancelled');
-    }
-  };
-
   const handleCreate = () => {
     const isNameValid = validateProjectName(projectName);
-    const isDirValid = validateDirectory(directory);
 
-    if (isNameValid && isDirValid) {
-      dispatch(createProject({ name: projectName, directory }));
+    if (isNameValid) {
+      // Create project with generated ID, timestamps, etc.
+      dispatch(createProjectAction({
+        name: projectName,
+        description: description.trim(),
+        pythonPackage: projectName.replace(/-/g, '_'), // Convert kebab-case to snake_case
+        pipelineName: '__default__',
+      }));
+
+      // Set hasActiveProject to true so EmptyState is hidden
+      dispatch(setHasActiveProject(true));
+
+      // Close the modal
+      dispatch(closeProjectSetup());
     }
   };
 
@@ -72,9 +53,8 @@ export const ProjectSetupModal: React.FC = () => {
     if (nameError) validateProjectName(e.target.value);
   };
 
-  const handleDirectoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDirectory(e.target.value);
-    if (directoryError) validateDirectory(e.target.value);
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setDescription(e.target.value);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -96,7 +76,7 @@ export const ProjectSetupModal: React.FC = () => {
           {/* Project Name */}
           <div className="project-setup-modal__field">
             <label htmlFor="project-name" className="project-setup-modal__label">
-              Kedro project name<span className="project-setup-modal__required">*</span>
+              Project name<span className="project-setup-modal__required">*</span>
             </label>
             <input
               id="project-name"
@@ -111,35 +91,27 @@ export const ProjectSetupModal: React.FC = () => {
               autoFocus
             />
             {nameError && <span className="project-setup-modal__error">{nameError}</span>}
+            <span className="project-setup-modal__helper">
+              Use lowercase letters, numbers, hyphens, and underscores
+            </span>
           </div>
 
-          {/* Save Directory */}
+          {/* Description */}
           <div className="project-setup-modal__field">
-            <label htmlFor="save-directory" className="project-setup-modal__label">
-              Save directory<span className="project-setup-modal__required">*</span>
+            <label htmlFor="project-description" className="project-setup-modal__label">
+              Description
             </label>
-            <div className="project-setup-modal__input-group">
-              <input
-                id="save-directory"
-                type="text"
-                ref={directoryInputRef}
-                className={`project-setup-modal__input ${
-                  directoryError ? 'project-setup-modal__input--error' : ''
-                }`}
-                value={directory}
-                onChange={handleDirectoryChange}
-                onKeyDown={handleKeyDown}
-                placeholder="Add text"
-              />
-              <button
-                type="button"
-                className="project-setup-modal__browse-button"
-                onClick={handleBrowse}
-              >
-                Browse
-              </button>
-            </div>
-            {directoryError && <span className="project-setup-modal__error">{directoryError}</span>}
+            <textarea
+              id="project-description"
+              className="project-setup-modal__textarea"
+              value={description}
+              onChange={handleDescriptionChange}
+              placeholder="Describe what this pipeline does..."
+              rows={3}
+            />
+            <span className="project-setup-modal__helper">
+              Optional: Add a brief description of your pipeline
+            </span>
           </div>
         </div>
 

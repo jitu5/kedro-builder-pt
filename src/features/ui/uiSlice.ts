@@ -15,8 +15,6 @@ const initialState: UIState = {
   // Project setup state
   showProjectSetup: false,
   hasActiveProject: false,
-  projectName: '',
-  projectDirectory: '',
 
   // UI component state
   selectedComponent: null,
@@ -97,20 +95,6 @@ const uiSlice = createSlice({
     closeProjectSetup: (state) => {
       state.showProjectSetup = false;
     },
-    createProject: (state, action: PayloadAction<{ name: string; directory: string }>) => {
-      state.projectName = action.payload.name;
-      state.projectDirectory = action.payload.directory;
-      state.hasActiveProject = true;
-      state.showProjectSetup = false;
-      // Save to localStorage
-      localStorage.setItem('kedro_builder_project_name', action.payload.name);
-      localStorage.setItem('kedro_builder_project_directory', action.payload.directory);
-      localStorage.setItem('kedro_builder_has_project', 'true');
-    },
-    updateProjectName: (state, action: PayloadAction<string>) => {
-      state.projectName = action.payload;
-      localStorage.setItem('kedro_builder_project_name', action.payload);
-    },
     setHasActiveProject: (state, action: PayloadAction<boolean>) => {
       state.hasActiveProject = action.payload;
     },
@@ -161,8 +145,6 @@ export const {
   // Project setup actions
   openProjectSetup,
   closeProjectSetup,
-  createProject,
-  updateProjectName,
   setHasActiveProject,
   // UI component actions
   openConfigPanel,

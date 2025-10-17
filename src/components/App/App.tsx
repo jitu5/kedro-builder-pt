@@ -6,8 +6,15 @@ import {
   startWalkthrough,
   reopenWalkthrough,
   setHasActiveProject,
-  updateProjectName,
 } from '../../features/ui/uiSlice';
+import { loadProject, clearProject } from '../../features/project/projectSlice';
+import { clearNodes } from '../../features/nodes/nodesSlice';
+import { clearDatasets } from '../../features/datasets/datasetsSlice';
+import { clearConnections } from '../../features/connections/connectionsSlice';
+import { addNode } from '../../features/nodes/nodesSlice';
+import { addDataset } from '../../features/datasets/datasetsSlice';
+import { addConnection } from '../../features/connections/connectionsSlice';
+import { loadProjectFromLocalStorage, clearProjectFromLocalStorage } from '../../utils/localStorage';
 import { ThemeToggle } from '../UI/ThemeToggle/ThemeToggle';
 import { ComponentPalette } from '../Palette/ComponentPalette';
 import { PipelineCanvas } from '../Canvas/PipelineCanvas';
@@ -15,7 +22,7 @@ import { ConfigPanel } from '../ConfigPanel/ConfigPanel';
 import { TutorialModal } from '../Tutorial/TutorialModal';
 import { WalkthroughOverlay } from '../Walkthrough/WalkthroughOverlay';
 import { ProjectSetupModal } from '../ProjectSetup/ProjectSetupModal';
-import { Code, Download, Edit2 } from 'lucide-react';
+import { Code, Download, Edit2, Plus } from 'lucide-react';
 import './App.scss';
 
 function App() {
@@ -25,7 +32,7 @@ function App() {
   const showWalkthrough = useAppSelector((state) => state.ui.showWalkthrough);
   const showProjectSetup = useAppSelector((state) => state.ui.showProjectSetup);
   const hasActiveProject = useAppSelector((state) => state.ui.hasActiveProject);
-  const projectName = useAppSelector((state) => state.ui.projectName);
+  const currentProject = useAppSelector((state) => state.project.current);
 
   const [isEditingProjectName, setIsEditingProjectName] = useState(false);
   const [tempProjectName, setTempProjectName] = useState('');
@@ -35,13 +42,13 @@ function App() {
     document.documentElement.className = `kedro-builder kui-theme--${theme}`;
   }, [theme]);
 
-  // Initialize app state from localStorage
+  // Initialize app state from localStorage (runs only once on mount)
   useEffect(() => {
     const tutorialCompleted = localStorage.getItem('kedro_builder_tutorial_completed');
     const walkthroughCompleted = localStorage.getItem('kedro_builder_walkthrough_completed');
-    const hasProject = localStorage.getItem('kedro_builder_has_project');
-    const savedProjectName = localStorage.getItem('kedro_builder_project_name');
-    const savedDirectory = localStorage.getItem('kedro_builder_project_directory');
+
+    // Try to load saved project
+    const savedProject = loadProjectFromLocalStorage();
 
     // Determine initial flow state
     if (!tutorialCompleted) {
@@ -50,15 +57,38 @@ function App() {
     } else if (!walkthroughCompleted) {
       // Show walkthrough after tutorial
       dispatch(startWalkthrough());
-    } else if (hasProject && savedProjectName) {
-      // User has a project, load it
+    } else if (savedProject) {
+      // Clear any existing state first (in case of hot reload during development)
+      dispatch(clearNodes());
+      dispatch(clearDatasets());
+      dispatch(clearConnections());
+
+      // Load the saved project into Redux
+      dispatch(loadProject(savedProject.project));
+
+      // Load nodes
+      savedProject.nodes.forEach(node => {
+        dispatch(addNode(node));
+      });
+
+      // Load datasets
+      savedProject.datasets.forEach(dataset => {
+        dispatch(addDataset(dataset));
+      });
+
+      // Load connections
+      savedProject.connections.forEach(connection => {
+        dispatch(addConnection(connection));
+      });
+
       dispatch(setHasActiveProject(true));
-      dispatch(updateProjectName(savedProjectName));
+      console.log('📂 Project loaded from localStorage');
     } else {
       // Walkthrough done but no project created
       dispatch(setHasActiveProject(false));
     }
-  }, [dispatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - run only once on mount
 
   const handleOpenTutorial = () => {
     dispatch(openTutorial());
@@ -68,10 +98,30 @@ function App() {
     dispatch(reopenWalkthrough());
   };
 
+  const handleNewProject = () => {
+    if (confirm('Are you sure you want to start a new project? This will clear all current work.')) {
+      // Clear all Redux state
+      dispatch(clearProject());
+      dispatch(clearNodes());
+      dispatch(clearDatasets());
+      dispatch(clearConnections());
+
+      // Clear localStorage
+      clearProjectFromLocalStorage();
+
+      // Update UI state
+      dispatch(setHasActiveProject(false));
+
+      console.log('🗑️ Project cleared');
+    }
+  };
+
   // Editable project name handlers
   const handleStartEditProjectName = () => {
-    setTempProjectName(projectName);
-    setIsEditingProjectName(true);
+    if (currentProject) {
+      setTempProjectName(currentProject.name);
+      setIsEditingProjectName(true);
+    }
   };
 
   const handleProjectNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,8 +129,12 @@ function App() {
   };
 
   const handleSaveProjectName = () => {
-    if (tempProjectName.trim() && /^[a-zA-Z0-9_-]+$/.test(tempProjectName)) {
-      dispatch(updateProjectName(tempProjectName));
+    if (tempProjectName.trim() && /^[a-zA-Z0-9_-]+$/.test(tempProjectName) && currentProject) {
+      dispatch(loadProject({
+        ...currentProject,
+        name: tempProjectName,
+        pythonPackage: tempProjectName.replace(/-/g, '_'),
+      }));
     }
     setIsEditingProjectName(false);
   };
@@ -108,6 +162,22 @@ function App() {
               </svg>
               <div className="app__header-project">
                 <h1>Kedro</h1>
+              </div>
+
+              <div className="app__header-project-controls">
+                {/* New Project Button */}
+                <button
+                  className="app__new-project-button"
+                  onClick={handleNewProject}
+                  title="New Project"
+                >
+                  <Plus size={18} />
+                  New Project
+                </button>
+
+                {/* Divider */}
+                <div className="app__header-divider"></div>
+
                 {/* Editable project name */}
                 <div className="app__project-name-container">
                   {isEditingProjectName ? (
@@ -125,7 +195,7 @@ function App() {
                       <p
                         className={`app__project-name ${!hasActiveProject ? 'app__project-name--disabled' : ''}`}
                       >
-                        {hasActiveProject ? projectName : 'Untitled project'}
+                        {currentProject ? currentProject.name : 'Untitled project'}
                       </p>
                       {hasActiveProject && (
                         <button
@@ -139,7 +209,7 @@ function App() {
                     </>
                   )}
                 </div>
-              </div>
+              </div>  
             </div>
 
             <div className="app__header-actions">

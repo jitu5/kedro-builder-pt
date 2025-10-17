@@ -15,7 +15,10 @@ const connectionsSlice = createSlice({
     addConnection: (state, action: PayloadAction<KedroConnection>) => {
       const connection = action.payload;
       state.byId[connection.id] = connection;
-      state.allIds.push(connection.id);
+      // Only add to allIds if it doesn't already exist
+      if (!state.allIds.includes(connection.id)) {
+        state.allIds.push(connection.id);
+      }
     },
     updateConnection: (
       state,
@@ -58,6 +61,11 @@ const connectionsSlice = createSlice({
     clearConnectionSelection: (state) => {
       state.selected = [];
     },
+    clearConnections: (state) => {
+      state.byId = {};
+      state.allIds = [];
+      state.selected = [];
+    },
   },
 });
 
@@ -69,6 +77,7 @@ export const {
   selectConnection,
   toggleConnectionSelection,
   clearConnectionSelection,
+  clearConnections,
 } = connectionsSlice.actions;
 
 export default connectionsSlice.reducer;
