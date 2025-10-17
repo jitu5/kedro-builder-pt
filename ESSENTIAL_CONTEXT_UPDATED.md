@@ -1,0 +1,324 @@
+# Essential Context for Kedro Builder - Current State
+
+## Project Status
+- **Completed:** Phases 1-4.5 (Core Builder + UX Enhancement)
+- **Latest:** Tutorial (5 steps) + Walkthrough (4 steps) + Project Setup
+- **Dev Server:** http://localhost:5179/ (running, no errors)
+- **Stack:** Vite 5.4.8, React 18, TypeScript (strict), Node 18.20.1
+- **Last Updated:** 2025-10-16 (Session: Walkthrough System Complete)
+- **Documentation:** See PROJECT_ARCHITECTURE.md for comprehensive overview
+
+## Core Dependencies
+```json
+{
+  "@reduxjs/toolkit": "^2.5.0",
+  "@xyflow/react": "^12.3.6",
+  "react-hook-form": "^7.54.2",
+  "@radix-ui/react-dialog": "^1.1.4",
+  "@radix-ui/react-dropdown-menu": "^2.1.4",
+  "@radix-ui/react-tooltip": "^1.1.6",
+  "lucide-react": "^0.469.0",
+  "classnames": "^2.5.1"
+}
+```
+
+## Key Architecture Decisions
+1. **Handles:** Top/bottom (NOT left/right) - vertical flow
+2. **UI Components:** Hybrid - Custom Button/Input + Radix for Dialog/Dropdown/Tooltip
+3. **Styling:** SCSS with BEM naming, CSS custom properties for theming
+4. **Forms:** React Hook Form (no input/output fields in NodeConfigForm)
+5. **Validation:** Only on generate/compile button (not real-time)
+6. **ID Prefixes:** `node-*` for nodes, `dataset-*` for datasets
+
+## Redux Store Structure
+```typescript
+{
+  project: { name, description, metadata, directory }
+  nodes: { byId: {}, allIds: [], selected: [] }  // Array for multi-select
+  datasets: { byId: {}, allIds: [], selected: null }
+  connections: { byId: {}, allIds: [], selected: [] }  // Array for multi-select
+  ui: {
+    showConfigPanel,
+    selectedComponent,
+    showTutorial,              // Tutorial modal state
+    tutorialStep,              // Current step (0-4)
+    tutorialCompleted,         // Persisted to localStorage
+    showWalkthrough,           // Walkthrough overlay state
+    walkthroughStep,           // Current step (1-4)
+    walkthroughCompleted,      // Persisted to localStorage
+    showProjectSetup,          // Project setup modal state
+    projectCreated             // Track if project has been created
+  }
+  validation: { errors: [], warnings: [], isValidating }
+  theme: { current: 'light' | 'dark' }
+}
+```
+
+## Critical Type Definitions
+```typescript
+type NodeType = 'data_ingestion' | 'data_processing' | 'model_training' | 'model_evaluation' | 'custom';
+type DatasetType = 'csv' | 'parquet' | 'json' | 'excel' | 'pickle' | 'memory' | 'sql';
+type DataLayer = '01_raw' | '02_intermediate' | '03_primary' | '04_feature' | '05_model_input' | '06_models' | '07_model_output' | '08_reporting';
+
+interface KedroNode {
+  id: string;
+  name: string;
+  type: NodeType;
+  inputs: string[];
+  outputs: string[];
+  functionCode?: string;
+  description?: string;
+  position: { x: number; y: number };
+}
+
+interface KedroDataset {
+  id: string;
+  name: string;
+  type: DatasetType;
+  filepath?: string;
+  layer?: DataLayer;
+  position: { x: number; y: number };  // IMPORTANT: Added for canvas
+}
+```
+
+## Project Structure
+```
+src/
+├── components/
+│   ├── App/                    # Main layout + header buttons
+│   ├── Canvas/
+│   │   ├── PipelineCanvas.tsx  # Main canvas (tracks drag state for EmptyState)
+│   │   ├── CustomNode/         # Processing nodes (top/bottom handles)
+│   │   ├── DatasetNode/        # Dataset visualization
+│   │   ├── CustomEdge/
+│   │   ├── EmptyState/         # Welcome screen + drag feedback
+│   │   ├── BulkActionsToolbar/ # Multi-select actions
+│   │   └── EdgeContextMenu/    # Right-click menu
+│   ├── Palette/
+│   │   ├── ComponentPalette.tsx
+│   │   ├── NodeCard/           # Draggable nodes
+│   │   └── DatasetCard/        # Draggable datasets
+│   ├── ConfigPanel/
+│   │   ├── NodeConfigForm/     # Name, Description, Code only
+│   │   └── DatasetConfigForm/
+│   ├── Tutorial/
+│   │   ├── TutorialModal.tsx   # 5-step onboarding
+│   │   └── tutorialContent.ts  # Step definitions
+│   ├── Walkthrough/
+│   │   ├── WalkthroughOverlay.tsx  # 4-step interactive guide
+│   │   └── walkthroughContent.ts   # Step definitions with spotlight
+│   ├── ProjectSetup/
+│   │   └── ProjectSetupModal.tsx   # Project creation form
+│   └── UI/                     # Button, Input, ThemeToggle
+├── features/                   # Redux slices
+├── store/
+└── types/
+```
+
+## Recent Implementation (Critical Patterns)
+
+### Tutorial System
+- **localStorage Key:** `kedro_builder_tutorial_completed`
+- **5 Steps:** Welcome → Datasets → Nodes → Connections → Generate
+- **Icons:** Sparkles, Database, FunctionSquare, GitBranch, FolderTree
+- **Auto-show:** On first visit, reopenable via header button
+
+### Walkthrough System (Phase 4.5)
+- **localStorage Key:** `kedro_builder_walkthrough_completed`
+- **4 Steps:** Interactive guide with spotlight circles
+  1. Sidebar → Spotlight on palette header (right)
+  2. Drag & Drop → Spotlight on first node card (right)
+  3. Connect Components → Spotlight on canvas (bottom)
+  4. Project Setup → Spotlight on "Create New Project" button (top)
+- **Z-Index Hierarchy:** Overlay: 99999, Spotlight: 99999, Tooltip/Modal: 100000
+- **Theme Support:** Uses CSS variables (var(--color-bg-2), var(--color-text))
+- **Spotlight Style:** Circular (max 150px), Kedro yellow (#ffb800), no shadow/backdrop
+- **Data Attributes:** `data-walkthrough="target-id"` for element targeting
+- **Viewport Detection:** Tooltip positioning adjusts to stay within screen bounds
+
+### Empty State + Drag Feedback
+- **Pattern:** PipelineCanvas tracks `isDraggingOver` state, passes to EmptyState
+- **CSS:** `pointer-events: none` on EmptyState to allow drops through
+- **Visual:** Pulsing blue dashed border appears on drag hover
+- **Reset:** `isDraggingOver` reset to false on drop/dragLeave
+- **Z-Index:** EmptyState z-index: 1 (below walkthrough)
+
+### Project Setup Modal
+- **Validation:** Real-time validation for project name and directory
+- **Pattern:** Alphanumeric, hyphens, underscores only (no spaces)
+- **Browser API:** File System Access API for directory picker with fallback
+- **Keyboard:** Enter to submit, Escape to cancel
+- **Theme Support:** CSS variables for colors
+
+### Previous Bug Fixes
+1. **Dataset Position Updates:** Added `updateDatasetPosition` action, ID-based routing
+2. **Edge Clicking:** 20px transparent stroke in CSS, 3px visual stroke
+3. **Delete Key:** Loop IDs, check prefix, dispatch correct action
+4. **Right-Click Menu:** Proper EdgeMouseHandler typing
+5. **Walkthrough Z-Index:** Increased to 99999/100000 to appear above all content
+6. **Circular Spotlight:** Use max dimension for both width/height
+7. **Theme-Aware Colors:** Changed hardcoded colors to CSS variables
+
+## Critical Code Patterns
+
+### Position Update (IMPORTANT)
+```typescript
+// In PipelineCanvas handleNodesChange
+if (change.id.startsWith('node-')) {
+  dispatch(updateNodePosition({ id, position }));
+} else if (change.id.startsWith('dataset-')) {
+  dispatch(updateDatasetPosition({ id, position }));
+}
+```
+
+### Delete Handler (IMPORTANT)
+```typescript
+selectedNodeIds.forEach((id) => {
+  if (id.startsWith('node-')) {
+    dispatch(deleteNodes([id]));
+  } else if (id.startsWith('dataset-')) {
+    dispatch(deleteDataset(id));
+  }
+});
+```
+
+### Edge CSS (IMPORTANT)
+```scss
+.react-flow__edge {
+  path:first-child {
+    stroke: transparent;
+    stroke-width: 20px; // Wide click area
+  }
+  &-path {
+    stroke-width: 3px; // Visual stroke
+  }
+}
+```
+
+### Walkthrough Spotlight Positioning (IMPORTANT)
+```typescript
+// Calculate circular spotlight (max 150px)
+const diameter = Math.min(Math.max(rect.width, rect.height) + 10, 150);
+
+setCirclePosition({
+  x: rect.left + rect.width / 2,
+  y: rect.top + rect.height / 2,
+  width: diameter,
+  height: diameter,
+});
+```
+
+### Data Attribute Targeting (IMPORTANT)
+```tsx
+// Target elements for walkthrough spotlight
+<div data-walkthrough="palette-header">...</div>
+<button data-walkthrough="create-project-button">...</button>
+
+// In WalkthroughOverlay
+const targetElement = document.querySelector(`[data-walkthrough="${step.target}"]`);
+```
+
+### Z-Index Hierarchy (IMPORTANT)
+```scss
+// EmptyState
+.empty-state { z-index: 1; }
+
+// Walkthrough Overlay
+.walkthrough-overlay { z-index: 99999; }
+.walkthrough-overlay__spotlight { z-index: 99999; }
+.walkthrough-overlay__tooltip { z-index: 100000; }
+.walkthrough-overlay__modal { z-index: 100000; }
+```
+
+## Working Features
+### Phase 1-4 (Core Builder)
+✅ Drag nodes/datasets from sidebar
+✅ Drop on canvas (stays in place)
+✅ Connect with top/bottom handles
+✅ Multi-select (Cmd/Ctrl + Click, Box selection)
+✅ Delete with Delete key
+✅ Right-click edges for context menu
+✅ Configure nodes (3 fields: name, description, code)
+✅ Configure datasets (5 fields)
+✅ Bulk actions toolbar
+✅ Theme switching (light/dark)
+✅ Keyboard shortcuts (Delete, Escape, Cmd+A)
+
+### Phase 4.5: Tutorial & Walkthrough (Completed)
+✅ 5-step tutorial modal with animations
+✅ Tutorial auto-shows on first visit
+✅ Tutorial button in header (can reopen)
+✅ 4-step interactive walkthrough with spotlight
+✅ Walkthrough button in header
+✅ Spotlight circles with Kedro yellow (#ffb800)
+✅ Theme-aware walkthrough UI (light/dark)
+✅ Viewport-aware tooltip positioning
+✅ Project setup modal with validation
+✅ Empty state with welcome message
+✅ Quick action buttons (Dataset, Function Node)
+✅ Drag-and-drop visual feedback (pulsing border)
+✅ Kedro logo in header
+✅ Consistent handle colors (#c0c5c9)
+✅ Z-index hierarchy for layered modals
+
+## Files to Re-Read When Needed
+- Component implementations: Can use Read tool
+- Documentation: PHASE_*_COMPLETE.md files
+- Implementation plan: UPDATED_IMPLEMENTATION_PLAN.md
+
+## Next Steps (Remaining Phases)
+
+### Phase 5: Validation System
+- Circular dependency detection
+- Orphaned nodes/datasets check
+- Type compatibility validation
+- Missing input/output warnings
+- Validation panel with error/warning lists
+
+### Phase 6: Code Generation & Preview
+- Handlebars templates (catalog.yml, nodes.py, pipeline.py)
+- Syntax-highlighted code preview
+- Live updates as pipeline changes
+- Copy-to-clipboard buttons
+
+### Phase 7: ZIP Download
+- JSZip integration for project export
+- Full Kedro project structure generation
+- Include all data layers, conf/, src/ folders
+- Download button functionality
+
+### Phase 8: Autosave & Storage
+- localStorage autosave every 30s
+- Project save/load/export
+- Import from JSON
+- Project list management
+
+### Phase 9: Advanced Features
+- Undo/redo with Redux middleware
+- Additional keyboard shortcuts
+- Template library (pre-built pipelines)
+- Error boundaries
+
+### Phase 10: Deployment
+- Production build optimization
+- GitHub Pages deployment
+- Documentation
+
+## Key Implementation Notes
+- ReactFlow state syncs to Redux on drag end (not during drag)
+- Selection state: nodes array, datasets null, connections array
+- No real-time validation (only on button click)
+- Connections infer inputs/outputs (not manual entry)
+- Datasets rendered as nodes on canvas (not separate layer)
+- Edge interaction: CSS-based wide click area (not JS)
+
+## Testing Checklist Template
+When building new features, test:
+- [ ] Drag & drop from sidebar
+- [ ] Click to select
+- [ ] Multi-select with modifiers
+- [ ] Delete key
+- [ ] Position persists after drag
+- [ ] Theme switching works
+- [ ] Config panel opens/closes
+- [ ] Redux state updates correctly

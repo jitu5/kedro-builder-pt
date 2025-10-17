@@ -1,0 +1,16 @@
+@use '../../../styles/variables' as *;
+
+.custom-edge {
+  fill: none;
+  transition: stroke 0.2s ease, stroke-width 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    stroke: var(--color-primary) !important;
+    stroke-width: 3 !important;
+  }
+
+  &--selected {
+    filter: drop-shadow(0 0 3px rgba($ocean-400, 0.4));
+  }
+}
