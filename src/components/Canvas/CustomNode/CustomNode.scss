@@ -27,6 +27,26 @@
     }
   }
 
+  &--error {
+    border-color: var(--color-error);
+    box-shadow: 0 0 0 2px rgba($red-0, 0.2);
+
+    &:hover {
+      border-color: var(--color-error);
+      box-shadow: 0 0 0 3px rgba($red-0, 0.3);
+    }
+  }
+
+  &--warning {
+    border-color: var(--color-warning);
+    box-shadow: 0 0 0 2px rgba($yellow-0, 0.2);
+
+    &:hover {
+      border-color: var(--color-warning);
+      box-shadow: 0 0 0 3px rgba($yellow-0, 0.3);
+    }
+  }
+
   // Node content - icon and name only
   &__content {
     display: flex;

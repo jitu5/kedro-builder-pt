@@ -2,11 +2,13 @@
 
 ## Project Status
 - **Completed:** Phases 1-5 (Core Builder + UX + localStorage Persistence)
-- **Latest:** localStorage auto-save/load system + Project metadata (id, description, timestamps)
+- **Latest Session:** Bug fixes (duplicate connections), theme persistence, UI improvements
+- **Current:** All working features tested and stable
 - **Dev Server:** http://localhost:5179/ (running, no errors)
 - **Stack:** Vite 5.4.8, React 18, TypeScript (strict), Node 18.20.1
-- **Last Updated:** 2025-10-17 (Session: localStorage Persistence Complete)
+- **Last Updated:** 2025-10-17 (Session: Phase 5 Complete + Bug Fixes)
 - **Documentation:** See PROJECT_ARCHITECTURE.md for comprehensive overview
+- **Context Status:** 60% used, ready for Phase 6
 
 ## Core Dependencies
 ```json
@@ -190,7 +192,16 @@ src/
 - **Theme Persistence:** Saves immediately on theme change, loads on app start
 - **Benefits:** No work lost on refresh, instant persistence, works offline
 
-### Previous Bug Fixes
+### Recent Bug Fixes & Improvements (Latest Session)
+1. **Duplicate Connections Fixed:** Added duplicate check in `addConnection` to prevent same ID in `allIds`
+2. **useEffect Dependency Fixed:** Changed from `[dispatch]` to `[]` to prevent multiple loads
+3. **State Clearing on Load:** Clear existing state before loading from localStorage
+4. **Theme Persistence:** Theme now saves to localStorage and loads on app start
+5. **EmptyState Display Fix:** Added `setHasActiveProject(true)` after project creation
+6. **UI Improvement:** Moved "New Project" button to header left (between logo and project name)
+7. **Divider Visibility:** Updated divider to use `var(--color-text-alt)` for both themes
+
+### Previous Bug Fixes (Earlier Phases)
 1. **Dataset Position Updates:** Added `updateDatasetPosition` action, ID-based routing
 2. **Edge Clicking:** 20px transparent stroke in CSS, 3px visual stroke
 3. **Delete Key:** Loop IDs, check prefix, dispatch correct action

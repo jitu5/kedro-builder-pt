@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import { store } from '../../store';
 import {
   setShowTutorial,
   openTutorial,
@@ -14,7 +15,10 @@ import { clearConnections } from '../../features/connections/connectionsSlice';
 import { addNode } from '../../features/nodes/nodesSlice';
 import { addDataset } from '../../features/datasets/datasetsSlice';
 import { addConnection } from '../../features/connections/connectionsSlice';
+import { setValidationResults } from '../../features/validation/validationSlice';
 import { loadProjectFromLocalStorage, clearProjectFromLocalStorage } from '../../utils/localStorage';
+import { validatePipeline } from '../../utils/validation';
+import type { ValidationResult } from '../../utils/validation';
 import { ThemeToggle } from '../UI/ThemeToggle/ThemeToggle';
 import { ComponentPalette } from '../Palette/ComponentPalette';
 import { PipelineCanvas } from '../Canvas/PipelineCanvas';
@@ -22,6 +26,9 @@ import { ConfigPanel } from '../ConfigPanel/ConfigPanel';
 import { TutorialModal } from '../Tutorial/TutorialModal';
 import { WalkthroughOverlay } from '../Walkthrough/WalkthroughOverlay';
 import { ProjectSetupModal } from '../ProjectSetup/ProjectSetupModal';
+import { ValidationPanel } from '../ValidationPanel/ValidationPanel';
+import { ExportWizard } from '../ExportWizard/ExportWizard';
+import { generateKedroProject, downloadProject } from '../../utils/export';
 import { Code, Download, Edit2, Plus } from 'lucide-react';
 import './App.scss';
 
@@ -36,6 +43,8 @@ function App() {
 
   const [isEditingProjectName, setIsEditingProjectName] = useState(false);
   const [tempProjectName, setTempProjectName] = useState('');
+  const [showExportWizard, setShowExportWizard] = useState(false);
+  const [exportValidationResult, setExportValidationResult] = useState<ValidationResult | null>(null);
 
   // Apply theme class to root element
   useEffect(() => {
@@ -98,8 +107,8 @@ function App() {
     dispatch(reopenWalkthrough());
   };
 
-  const handleNewProject = () => {
-    if (confirm('Are you sure you want to start a new project? This will clear all current work.')) {
+  const handleResetProject = () => {
+    if (confirm('Are you sure you want to reset the project? This will clear all current work.')) {
       // Clear all Redux state
       dispatch(clearProject());
       dispatch(clearNodes());
@@ -151,6 +160,59 @@ function App() {
     }
   };
 
+  const handleExport = () => {
+    // Get current state from store
+    const state = store.getState();
+
+    // Run validation
+    const validationResult = validatePipeline(state);
+
+    // Store validation results in Redux (for ValidationPanel compatibility)
+    dispatch(setValidationResults(validationResult));
+
+    // Store validation results in local state for ExportWizard
+    setExportValidationResult(validationResult);
+
+    // Open export wizard (it will handle showing validation results)
+    setShowExportWizard(true);
+  };
+
+  const handleConfirmExport = async (metadata: {
+    projectName: string;
+    pythonPackage: string;
+    pipelineName: string;
+    description: string;
+  }) => {
+    try {
+      console.log('🚀 Generating Kedro project...');
+
+      // Get current state
+      const state = store.getState();
+
+      // Generate ZIP file
+      const zipBlob = await generateKedroProject(state, metadata);
+
+      // Download the file
+      downloadProject(zipBlob, metadata.projectName);
+
+      // Close dialog
+      setShowExportWizard(false);
+
+      console.log('✅ Project exported successfully!');
+      alert(
+        `Project "${metadata.projectName}" exported successfully!\n\n` +
+          'Next steps:\n' +
+          '1. Extract the ZIP file\n' +
+          `2. cd ${metadata.projectName}\n` +
+          '3. pip install -e .\n' +
+          '4. kedro run'
+      );
+    } catch (error) {
+      console.error('❌ Export failed:', error);
+      alert('Failed to export project. Please try again.');
+    }
+  };
+
   return (
     <div className="kedro-builder" data-theme={theme}>
       <div className="app">
@@ -165,19 +227,6 @@ function App() {
               </div>
 
               <div className="app__header-project-controls">
-                {/* New Project Button */}
-                <button
-                  className="app__new-project-button"
-                  onClick={handleNewProject}
-                  title="New Project"
-                >
-                  <Plus size={18} />
-                  New Project
-                </button>
-
-                {/* Divider */}
-                <div className="app__header-divider"></div>
-
                 {/* Editable project name */}
                 <div className="app__project-name-container">
                   {isEditingProjectName ? (
@@ -209,6 +258,18 @@ function App() {
                     </>
                   )}
                 </div>
+                
+                {/* Divider */}
+                {currentProject && <div className="app__header-divider"></div>}
+
+                {/* Reset Project Button */}
+                {currentProject && <button
+                  className="app__reset-project-button"
+                  onClick={handleResetProject}
+                  title="Reset Project"
+                >
+                  Reset Project
+                </button>}
               </div>  
             </div>
 
@@ -233,7 +294,8 @@ function App() {
                 className="app__header-button app__header-button--primary"
                 data-walkthrough="export-button"
                 disabled={!hasActiveProject}
-                title="Export Project (Coming Soon)"
+                onClick={handleExport}
+                title="Export Kedro Project"
               >
                 <Download size={18} />
                 Export
@@ -261,6 +323,15 @@ function App() {
       <TutorialModal />
       {showWalkthrough && <WalkthroughOverlay />}
       {showProjectSetup && <ProjectSetupModal />}
+      <ValidationPanel />
+      {exportValidationResult && (
+        <ExportWizard
+          isOpen={showExportWizard}
+          onClose={() => setShowExportWizard(false)}
+          validationResult={exportValidationResult}
+          onExport={handleConfirmExport}
+        />
+      )}
     </div>
   );
 }
