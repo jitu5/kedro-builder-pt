@@ -1,14 +1,30 @@
-import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { createProject as createProjectAction } from '../../features/project/projectSlice';
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import type { RootState } from '../../types/redux';
+import { createProject as createProjectAction, clearProject } from '../../features/project/projectSlice';
 import { closeProjectSetup, setHasActiveProject } from '../../features/ui/uiSlice';
+import { clearNodes } from '../../features/nodes/nodesSlice';
+import { clearDatasets } from '../../features/datasets/datasetsSlice';
+import { clearConnections } from '../../features/connections/connectionsSlice';
+import { clearProjectFromLocalStorage } from '../../utils/localStorage';
 import './ProjectSetupModal.scss';
 
 export const ProjectSetupModal: React.FC = () => {
   const dispatch = useDispatch();
-  const [projectName, setProjectName] = useState('my-first-project');
-  const [description, setDescription] = useState('');
+  const currentProject = useSelector((state: RootState) => state.project.current);
+  const isEditing = currentProject !== null;
+
+  const [projectName, setProjectName] = useState(currentProject?.name || 'my-first-project');
+  const [description, setDescription] = useState(currentProject?.description || '');
   const [nameError, setNameError] = useState('');
+
+  // Update form when currentProject changes
+  useEffect(() => {
+    if (currentProject) {
+      setProjectName(currentProject.name);
+      setDescription(currentProject.description || '');
+    }
+  }, [currentProject]);
 
   // Validate project name (alphanumeric, hyphens, underscores, no spaces)
   const validateProjectName = (name: string): boolean => {
@@ -48,6 +64,27 @@ export const ProjectSetupModal: React.FC = () => {
     dispatch(closeProjectSetup());
   };
 
+  const handleResetProject = () => {
+    if (confirm('Are you sure you want to reset the project? This will clear all current work.')) {
+      // Clear all Redux state
+      dispatch(clearProject());
+      dispatch(clearNodes());
+      dispatch(clearDatasets());
+      dispatch(clearConnections());
+
+      // Clear localStorage
+      clearProjectFromLocalStorage();
+
+      // Update UI state
+      dispatch(setHasActiveProject(false));
+
+      // Close modal
+      dispatch(closeProjectSetup());
+
+      console.log('🗑️ Project reset');
+    }
+  };
+
   const handleProjectNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProjectName(e.target.value);
     if (nameError) validateProjectName(e.target.value);
@@ -70,7 +107,9 @@ export const ProjectSetupModal: React.FC = () => {
       <div className="project-setup-modal__backdrop" onClick={handleCancel} />
 
       <div className="project-setup-modal__container">
-        <h2 className="project-setup-modal__title">Set up your project</h2>
+        <h2 className="project-setup-modal__title">
+          {isEditing ? 'Edit project' : 'Set up your project'}
+        </h2>
 
         <div className="project-setup-modal__form">
           {/* Project Name */}
@@ -123,11 +162,19 @@ export const ProjectSetupModal: React.FC = () => {
           >
             Cancel
           </button>
+          {isEditing && (
+            <button
+              className="project-setup-modal__button project-setup-modal__button--reset"
+              onClick={handleResetProject}
+            >
+              Reset project
+            </button>
+          )}
           <button
             className="project-setup-modal__button project-setup-modal__button--create"
             onClick={handleCreate}
           >
-            Create Project
+            {isEditing ? 'Apply changes' : 'Create Project'}
           </button>
         </div>
       </div>

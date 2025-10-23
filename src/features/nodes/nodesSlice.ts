@@ -1,6 +1,7 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { NodesState } from '../../types/redux';
-import { KedroNode, NodeType } from '../../types/kedro';
+import { createSlice } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import type { NodesState } from '../../types/redux';
+import type { KedroNode, NodeType } from '../../types/kedro';
 
 const initialState: NodesState = {
   byId: {},

@@ -7,21 +7,22 @@ import type { KedroDataset } from '../../../types/kedro';
 import type { RootState } from '../../../types/redux';
 import './DatasetNode.scss';
 
-export const DatasetNode = memo<NodeProps<KedroDataset>>(({ data, selected }) => {
+export const DatasetNode = memo<NodeProps>(({ data, selected }) => {
+  const datasetData = data as KedroDataset;
   const validationErrors = useSelector((state: RootState) => state.validation.errors);
   const validationWarnings = useSelector((state: RootState) => state.validation.warnings);
 
   // Check if this dataset has any validation issues
   const hasError = validationErrors.some(
-    (err) => err.componentId === data.id && err.componentType === 'dataset'
+    (err) => err.componentId === datasetData.id && err.componentType === 'dataset'
   );
   const hasWarning = validationWarnings.some(
-    (warn) => warn.componentId === data.id && warn.componentType === 'dataset'
+    (warn) => warn.componentId === datasetData.id && warn.componentType === 'dataset'
   );
 
   return (
     <div
-      className={classNames('dataset-node', `dataset-node--${data.type}`, {
+      className={classNames('dataset-node', `dataset-node--${datasetData.type}`, {
         'dataset-node--selected': selected,
         'dataset-node--error': hasError,
         'dataset-node--warning': !hasError && hasWarning,
@@ -40,7 +41,7 @@ export const DatasetNode = memo<NodeProps<KedroDataset>>(({ data, selected }) =>
         <div className="dataset-node__icon">
           <Database size={20} />
         </div>
-        <h4 className="dataset-node__name">{data.name || 'Unnamed Dataset'}</h4>
+        <h4 className="dataset-node__name">{datasetData.name || 'Unnamed Dataset'}</h4>
       </div>
 
       {/* Bottom Handle for connections to below */}

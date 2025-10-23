@@ -1,6 +1,7 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { ConnectionsState } from '../../types/redux';
-import { KedroConnection } from '../../types/kedro';
+import { createSlice } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import type { ConnectionsState } from '../../types/redux';
+import type { KedroConnection } from '../../types/kedro';
 
 const initialState: ConnectionsState = {
   byId: {},

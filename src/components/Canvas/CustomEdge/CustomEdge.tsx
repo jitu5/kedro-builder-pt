@@ -1,5 +1,6 @@
 import { memo } from 'react';
-import { EdgeProps, getBezierPath } from '@xyflow/react';
+import { getBezierPath } from '@xyflow/react';
+import type { EdgeProps } from '@xyflow/react';
 import './CustomEdge.scss';
 
 export const CustomEdge = memo<EdgeProps>(

@@ -1,9 +1,5 @@
 import React from 'react';
-import { useDispatch } from 'react-redux';
 import type { ValidationResult } from '../../utils/validation';
-import { selectNode } from '../../features/nodes/nodesSlice';
-import { selectDataset } from '../../features/datasets/datasetsSlice';
-import { openConfigPanel } from '../../features/ui/uiSlice';
 import { CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
 import { ValidationItem } from '../ValidationPanel/ValidationItem';
 
@@ -18,7 +14,6 @@ export const ValidationStepContent: React.FC<ValidationStepContentProps> = ({
   onContinue,
   onClose,
 }) => {
-  const dispatch = useDispatch();
   const { errors, warnings } = validationResult;
 
   const hasErrors = errors.length > 0;
@@ -80,12 +75,12 @@ export const ValidationStepContent: React.FC<ValidationStepContentProps> = ({
 
       {/* Action Buttons */}
       <div className="export-wizard__actions">
-        <button
+        {!hasErrors && <button
           className="export-wizard__button export-wizard__button--secondary"
           onClick={onClose}
         >
           Cancel
-        </button>
+        </button>}
         {!hasErrors && (
           <button
             className="export-wizard__button export-wizard__button--primary"

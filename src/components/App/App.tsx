@@ -5,18 +5,15 @@ import {
   setShowTutorial,
   openTutorial,
   startWalkthrough,
-  reopenWalkthrough,
   setHasActiveProject,
+  openProjectSetup,
 } from '../../features/ui/uiSlice';
-import { loadProject, clearProject } from '../../features/project/projectSlice';
-import { clearNodes } from '../../features/nodes/nodesSlice';
-import { clearDatasets } from '../../features/datasets/datasetsSlice';
-import { clearConnections } from '../../features/connections/connectionsSlice';
-import { addNode } from '../../features/nodes/nodesSlice';
-import { addDataset } from '../../features/datasets/datasetsSlice';
-import { addConnection } from '../../features/connections/connectionsSlice';
+import { loadProject } from '../../features/project/projectSlice';
+import { addNode, clearNodes } from '../../features/nodes/nodesSlice';
+import { addDataset, clearDatasets } from '../../features/datasets/datasetsSlice';
+import { addConnection, clearConnections } from '../../features/connections/connectionsSlice';
 import { setValidationResults } from '../../features/validation/validationSlice';
-import { loadProjectFromLocalStorage, clearProjectFromLocalStorage } from '../../utils/localStorage';
+import { loadProjectFromLocalStorage } from '../../utils/localStorage';
 import { validatePipeline } from '../../utils/validation';
 import type { ValidationResult } from '../../utils/validation';
 import { ThemeToggle } from '../UI/ThemeToggle/ThemeToggle';
@@ -29,7 +26,7 @@ import { ProjectSetupModal } from '../ProjectSetup/ProjectSetupModal';
 import { ValidationPanel } from '../ValidationPanel/ValidationPanel';
 import { ExportWizard } from '../ExportWizard/ExportWizard';
 import { generateKedroProject, downloadProject } from '../../utils/export';
-import { Code, Download, Edit2, Plus } from 'lucide-react';
+import { Code, Download, Edit2 } from 'lucide-react';
 import './App.scss';
 
 function App() {
@@ -40,11 +37,14 @@ function App() {
   const showProjectSetup = useAppSelector((state) => state.ui.showProjectSetup);
   const hasActiveProject = useAppSelector((state) => state.ui.hasActiveProject);
   const currentProject = useAppSelector((state) => state.project.current);
+  const nodes = useAppSelector((state) => state.nodes.allIds);
+  const datasets = useAppSelector((state) => state.datasets.allIds);
 
-  const [isEditingProjectName, setIsEditingProjectName] = useState(false);
-  const [tempProjectName, setTempProjectName] = useState('');
   const [showExportWizard, setShowExportWizard] = useState(false);
   const [exportValidationResult, setExportValidationResult] = useState<ValidationResult | null>(null);
+
+  // Check if pipeline has any content (nodes or datasets)
+  const hasPipelineContent = nodes.length > 0 || datasets.length > 0;
 
   // Apply theme class to root element
   useEffect(() => {
@@ -103,61 +103,9 @@ function App() {
     dispatch(openTutorial());
   };
 
-  const handleOpenWalkthrough = () => {
-    dispatch(reopenWalkthrough());
-  };
-
-  const handleResetProject = () => {
-    if (confirm('Are you sure you want to reset the project? This will clear all current work.')) {
-      // Clear all Redux state
-      dispatch(clearProject());
-      dispatch(clearNodes());
-      dispatch(clearDatasets());
-      dispatch(clearConnections());
-
-      // Clear localStorage
-      clearProjectFromLocalStorage();
-
-      // Update UI state
-      dispatch(setHasActiveProject(false));
-
-      console.log('🗑️ Project cleared');
-    }
-  };
-
-  // Editable project name handlers
-  const handleStartEditProjectName = () => {
-    if (currentProject) {
-      setTempProjectName(currentProject.name);
-      setIsEditingProjectName(true);
-    }
-  };
-
-  const handleProjectNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTempProjectName(e.target.value);
-  };
-
-  const handleSaveProjectName = () => {
-    if (tempProjectName.trim() && /^[a-zA-Z0-9_-]+$/.test(tempProjectName) && currentProject) {
-      dispatch(loadProject({
-        ...currentProject,
-        name: tempProjectName,
-        pythonPackage: tempProjectName.replace(/-/g, '_'),
-      }));
-    }
-    setIsEditingProjectName(false);
-  };
-
-  const handleCancelEditProjectName = () => {
-    setIsEditingProjectName(false);
-  };
-
-  const handleProjectNameKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSaveProjectName();
-    } else if (e.key === 'Escape') {
-      handleCancelEditProjectName();
-    }
+  // Handler to open ProjectSetupModal for editing
+  const handleEditProject = () => {
+    dispatch(openProjectSetup());
   };
 
   const handleExport = () => {
@@ -227,49 +175,24 @@ function App() {
               </div>
 
               <div className="app__header-project-controls">
-                {/* Editable project name */}
-                <div className="app__project-name-container">
-                  {isEditingProjectName ? (
-                    <input
-                      type="text"
-                      className="app__project-name-input"
-                      value={tempProjectName}
-                      onChange={handleProjectNameChange}
-                      onKeyDown={handleProjectNameKeyDown}
-                      onBlur={handleSaveProjectName}
-                      autoFocus
-                    />
-                  ) : (
-                    <>
-                      <p
-                        className={`app__project-name ${!hasActiveProject ? 'app__project-name--disabled' : ''}`}
-                      >
-                        {currentProject ? currentProject.name : 'Untitled project'}
-                      </p>
-                      {hasActiveProject && (
-                        <button
-                          className="app__project-name-edit"
-                          onClick={handleStartEditProjectName}
-                          title="Edit project name"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-                
-                {/* Divider */}
-                {currentProject && <div className="app__header-divider"></div>}
-
-                {/* Reset Project Button */}
-                {currentProject && <button
-                  className="app__reset-project-button"
-                  onClick={handleResetProject}
-                  title="Reset Project"
+                {/* Project name display */}
+                <p
+                  className={`app__project-name ${!hasActiveProject ? 'app__project-name--disabled' : ''}`}
                 >
-                  Reset Project
-                </button>}
+                  {currentProject ? currentProject.name : 'Untitled project'}
+                </p>
+
+                {/* Edit Project Button - Opens ProjectSetupModal */}
+                {hasActiveProject && (
+                  <button
+                    className="app__project-name-edit"
+                    onClick={handleEditProject}
+                    title="Edit project"
+                  >
+                    <Edit2 size={16} />
+                    Edit
+                  </button>
+                )}
               </div>  
             </div>
 
@@ -284,7 +207,7 @@ function App() {
               <button
                 className="app__header-button"
                 data-walkthrough="view-code-button"
-                disabled={!hasActiveProject}
+                disabled
                 title="View Code (Coming Soon)"
               >
                 <Code size={18} />
@@ -293,12 +216,12 @@ function App() {
               <button
                 className="app__header-button app__header-button--primary"
                 data-walkthrough="export-button"
-                disabled={!hasActiveProject}
+                disabled={!hasActiveProject || !hasPipelineContent}
                 onClick={handleExport}
-                title="Export Kedro Project"
+                title="Validate & Export Kedro Project"
               >
                 <Download size={18} />
-                Export
+                Validate & Export
               </button>
               <ThemeToggle />
             </div>

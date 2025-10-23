@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { useAppDispatch } from '../../../store/hooks';
 import { updateNode, deleteNode } from '../../../features/nodes/nodesSlice';
-import { KedroNode } from '../../../types/kedro';
+import type { KedroNode } from '../../../types/kedro';
 import { Button } from '../../UI/Button/Button';
 import { Input } from '../../UI/Input/Input';
 import './NodeConfigForm.scss';

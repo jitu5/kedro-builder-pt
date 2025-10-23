@@ -8,12 +8,14 @@ import {
   useReactFlow,
   useNodesState,
   useEdgesState,
-  Connection,
-  Edge,
-  Node,
   addEdge,
   ConnectionMode,
   BackgroundVariant,
+} from '@xyflow/react';
+import type {
+  Connection,
+  Edge,
+  Node,
   OnSelectionChangeParams,
   EdgeMouseHandler,
 } from '@xyflow/react';
@@ -52,7 +54,7 @@ import { CustomEdge } from './CustomEdge/CustomEdge';
 import { BulkActionsToolbar } from './BulkActionsToolbar/BulkActionsToolbar';
 import { EdgeContextMenu } from './EdgeContextMenu/EdgeContextMenu';
 import { EmptyState } from './EmptyState/EmptyState';
-import { NodeType, DatasetType } from '../../types/kedro';
+import type { NodeType, DatasetType } from '../../types/kedro';
 
 import './PipelineCanvas.scss';
 
@@ -237,11 +239,11 @@ const PipelineCanvasInner = () => {
 
   // Sync position changes to Redux (immediate for smooth edges)
   const handleNodesChange = useCallback(
-    (changes) => {
+    (changes: any[]) => {
       onNodesChange(changes);
 
       // Update Redux immediately during and after dragging for smooth edge rendering
-      changes.forEach((change) => {
+      changes.forEach((change: any) => {
         if (change.type === 'position' && change.position) {
           // Determine if it's a node or dataset based on ID prefix
           if (change.id.startsWith('node-')) {
@@ -280,7 +282,7 @@ const PipelineCanvasInner = () => {
         animated: true,
       };
 
-      setEdges((eds) => addEdge(newEdge, eds));
+      setEdges((eds) => addEdge(newEdge, eds) as any);
 
       // Save to Redux
       dispatch(

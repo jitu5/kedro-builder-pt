@@ -2,8 +2,8 @@
  * ReactFlow custom type definitions
  */
 
-import { Node, Edge } from '@xyflow/react';
-import { KedroNode, KedroConnection } from './kedro';
+import type { Node, Edge } from '@xyflow/react';
+import type { KedroNode, KedroConnection } from './kedro';
 
 export type CustomNodeData = KedroNode;
 

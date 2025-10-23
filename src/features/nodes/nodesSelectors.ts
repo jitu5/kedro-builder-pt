@@ -1,5 +1,5 @@
-import { RootState } from '../../store';
-import { KedroNode } from '../../types/kedro';
+import type { RootState } from '../../store';
+import type { KedroNode } from '../../types/kedro';
 
 export const selectAllNodes = (state: RootState): KedroNode[] => {
   return state.nodes.allIds.map((id) => state.nodes.byId[id]);
@@ -10,8 +10,8 @@ export const selectNodeById = (state: RootState, nodeId: string): KedroNode | un
 };
 
 export const selectSelectedNode = (state: RootState): KedroNode | null => {
-  const selectedId = state.nodes.selected;
-  return selectedId ? state.nodes.byId[selectedId] : null;
+  const selectedIds = state.nodes.selected;
+  return selectedIds.length > 0 ? state.nodes.byId[selectedIds[0]] : null;
 };
 
 export const selectNodesCount = (state: RootState): number => {

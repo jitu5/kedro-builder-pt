@@ -30,7 +30,7 @@
     border-radius: 12px;
     padding: 40px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    animation: slideUp 0.3s ease-out;
+    // animation: slideUp 0.3s ease-out;
   }
 
   &__title {
@@ -162,12 +162,11 @@
 
   &__actions {
     display: flex;
-    justify-content: space-between;
-    gap: 16px;
+    justify-content: flex-end;
+    gap: 12px;
   }
 
   &__button {
-    flex: 1;
     padding: 14px 24px;
     font-size: 15px;
     font-weight: 500;
@@ -181,11 +180,25 @@
     }
 
     &--cancel {
-      background-color: #e5e7eb;
-      color: var(--color-text-primary, #1a1a1a);
+      background-color: transparent;
+      color: var(--color-text-secondary, #6b7280);
+      border: none;
+      text-decoration: underline;
+      padding: 14px 16px;
 
       &:hover {
-        background-color: #d1d5db;
+        color: var(--color-text-primary, #1a1a1a);
+        background-color: transparent;
+      }
+    }
+
+    &--reset {
+      background-color: transparent;
+      color: #ef4444;
+      border: 1px solid #ef4444;
+
+      &:hover {
+        background-color: #fef2f2;
       }
     }
 
@@ -225,6 +238,67 @@
   .project-setup-modal {
     &__backdrop {
       background-color: rgba(0, 0, 0, 0.7);
+    }
+
+    &__container {
+      background-color: var(--color-bg-2, #1f2937);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    }
+
+    &__title {
+      color: var(--color-text-primary, #f9fafb);
+    }
+
+    &__label {
+      color: var(--color-text-primary, #f9fafb);
+    }
+
+    &__input,
+    &__textarea {
+      background-color: var(--color-bg-1, #111827);
+      border-color: var(--color-border, rgba(255, 255, 255, 0.1));
+      color: var(--color-text-primary, #f9fafb);
+
+      &::placeholder {
+        color: var(--color-text-tertiary, #6b7280);
+      }
+
+      &:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+      }
+    }
+
+    &__helper {
+      color: var(--color-text-tertiary, #6b7280);
+    }
+
+    &__button {
+      &--cancel {
+        color: var(--color-text-secondary, #9ca3af);
+
+        &:hover {
+          color: var(--color-text-primary, #f9fafb);
+        }
+      }
+
+      &--reset {
+        color: #ef4444;
+        border-color: #ef4444;
+
+        &:hover {
+          background-color: rgba(239, 68, 68, 0.1);
+        }
+      }
+
+      &--create {
+        background-color: #ffffff;
+        color: #1a1a1a;
+
+        &:hover {
+          opacity: 0.9;
+        }
+      }
     }
   }
 }

@@ -1,5 +1,5 @@
 import { Database, Cpu, BarChart3, Download, Settings } from 'lucide-react';
-import { NodeType } from '../../../types/kedro';
+import type { NodeType } from '../../../types/kedro';
 import './NodeCard.scss';
 
 const NODE_ICONS = {

@@ -2,8 +2,8 @@
  * Redux middleware for auto-saving project state to localStorage
  */
 
-import { Middleware } from '@reduxjs/toolkit';
-import { RootState } from '../../types/redux';
+import type { Middleware } from '@reduxjs/toolkit';
+import type { RootState } from '../../types/redux';
 import { saveProjectToLocalStorage } from '../../utils/localStorage';
 
 // Debounce timer
@@ -46,7 +46,7 @@ export const autoSaveMiddleware: Middleware<{}, RootState> = (store) => (next) =
 
   // Check if this action should trigger a save
   const shouldSave = SAVE_TRIGGER_ACTIONS.some(trigger =>
-    action.type.startsWith(trigger)
+    (action as { type: string }).type.startsWith(trigger)
   );
 
   if (shouldSave) {

@@ -49,6 +49,7 @@ export interface KedroNode {
   description?: string;
   parameters?: Record<string, unknown>;
   position: { x: number; y: number };
+  [key: string]: unknown;
 }
 
 export interface KedroDataset {
@@ -60,6 +61,7 @@ export interface KedroDataset {
   catalogConfig?: Record<string, unknown>;
   description?: string;
   position: { x: number; y: number };
+  [key: string]: unknown;
 }
 
 export interface KedroConnection {
@@ -69,6 +71,7 @@ export interface KedroConnection {
   sourceHandle: string;
   targetHandle: string;
   datasetName?: string;
+  [key: string]: unknown;
 }
 
 export interface ValidationError {

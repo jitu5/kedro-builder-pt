@@ -1,5 +1,6 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { UIState } from '../../types/redux';
+import { createSlice } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import type { UIState } from '../../types/redux';
 
 const initialState: UIState = {
   // Tutorial state

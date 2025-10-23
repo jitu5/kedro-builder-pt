@@ -3,12 +3,12 @@
  */
 
 import {
-  KedroProject,
-  KedroNode,
-  KedroDataset,
-  KedroConnection,
-  ValidationError,
-  ProjectMetadata,
+  type KedroProject,
+  type KedroNode,
+  type KedroDataset,
+  type KedroConnection,
+  type ValidationError,
+  type ProjectMetadata,
 } from './kedro';
 
 export interface ProjectState {

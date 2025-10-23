@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAppSelector } from '../../store/hooks';
 import { Database } from 'lucide-react';
 import './ComponentPalette.scss';
 
@@ -6,13 +7,22 @@ type TabType = 'components' | 'templates';
 
 export const ComponentPalette = () => {
   const [activeTab, setActiveTab] = useState<TabType>('components');
+  const hasActiveProject = useAppSelector((state) => state.ui.hasActiveProject);
 
   const handleNodeDragStart = (event: React.DragEvent) => {
+    if (!hasActiveProject) {
+      event.preventDefault();
+      return;
+    }
     event.dataTransfer.setData('application/kedro-builder', 'custom');
     event.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDatasetDragStart = (event: React.DragEvent) => {
+    if (!hasActiveProject) {
+      event.preventDefault();
+      return;
+    }
     event.dataTransfer.setData('application/kedro-builder-dataset', 'csv');
     event.dataTransfer.effectAllowed = 'move';
   };
@@ -44,9 +54,10 @@ export const ComponentPalette = () => {
         <div className="component-palette__list">
           {/* Function Node */}
           <div
-            className="component-card component-card--function"
-            draggable
+            className={`component-card component-card--function ${!hasActiveProject ? 'component-card--disabled' : ''}`}
+            draggable={hasActiveProject}
             onDragStart={handleNodeDragStart}
+            title={!hasActiveProject ? 'Create a project first' : ''}
           >
             <div className="component-card__icon">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -63,10 +74,11 @@ export const ComponentPalette = () => {
 
           {/* Dataset */}
           <div
-            className="component-card component-card--dataset"
-            draggable
+            className={`component-card component-card--dataset ${!hasActiveProject ? 'component-card--disabled' : ''}`}
+            draggable={hasActiveProject}
             onDragStart={handleDatasetDragStart}
             data-walkthrough="dataset-button"
+            title={!hasActiveProject ? 'Create a project first' : ''}
           >
             <div className="component-card__icon">
               <Database size={20} />

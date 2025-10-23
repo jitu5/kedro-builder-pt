@@ -6,24 +6,25 @@ import type { KedroNode } from '../../../types/kedro';
 import type { RootState } from '../../../types/redux';
 import './CustomNode.scss';
 
-export const CustomNode = memo<NodeProps<KedroNode>>(({ data, selected }) => {
+export const CustomNode = memo<NodeProps>(({ data, selected }) => {
+  const nodeData = data as KedroNode;
   const validationErrors = useSelector((state: RootState) => state.validation.errors);
   const validationWarnings = useSelector((state: RootState) => state.validation.warnings);
 
   // Check if this node has any validation issues
   const hasError = validationErrors.some(
-    (err) => err.componentId === data.id && err.componentType === 'node'
+    (err) => err.componentId === nodeData.id && err.componentType === 'node'
   );
   const hasWarning = validationWarnings.some(
-    (warn) => warn.componentId === data.id && warn.componentType === 'node'
+    (warn) => warn.componentId === nodeData.id && warn.componentType === 'node'
   );
 
   const nodeClasses = classNames(
     'custom-node',
-    `custom-node--${data.type}`,
+    `custom-node--${nodeData.type}`,
     {
       'custom-node--selected': selected,
-      'custom-node--unnamed': !data.name || data.name.trim() === '',
+      'custom-node--unnamed': !nodeData.name || nodeData.name.trim() === '',
       'custom-node--error': hasError,
       'custom-node--warning': !hasError && hasWarning, // Only show warning if no error
     }
@@ -49,7 +50,7 @@ export const CustomNode = memo<NodeProps<KedroNode>>(({ data, selected }) => {
           </svg>
         </div>
         <h4 className="custom-node__name">
-          {data.name && data.name.trim() !== '' ? data.name : 'Unnamed Node'}
+          {nodeData.name && nodeData.name.trim() !== '' ? nodeData.name : 'Unnamed Node'}
         </h4>
       </div>
 

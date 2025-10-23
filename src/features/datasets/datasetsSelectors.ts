@@ -1,5 +1,5 @@
-import { RootState } from '../../store';
-import { KedroDataset } from '../../types/kedro';
+import type { RootState } from '../../store';
+import type { KedroDataset } from '../../types/kedro';
 
 export const selectAllDatasets = (state: RootState): KedroDataset[] => {
   return state.datasets.allIds.map((id) => state.datasets.byId[id]);

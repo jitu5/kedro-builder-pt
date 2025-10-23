@@ -1,6 +1,6 @@
 import React from 'react';
-import { Database, FileText, FileJson, Table, Archive, HardDrive, Server } from 'lucide-react';
-import { DatasetType } from '../../../types/kedro';
+import { FileText, FileJson, Table, Archive, HardDrive, Server } from 'lucide-react';
+import type { DatasetType } from '../../../types/kedro';
 import './DatasetCard.scss';
 
 interface DatasetCardProps {

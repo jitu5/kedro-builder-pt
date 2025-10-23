@@ -1,5 +1,5 @@
 import { Sparkles, FunctionSquare, GitBranch, Database, FolderTree } from 'lucide-react';
-import { TutorialStep } from '../../types/tutorial';
+import type { TutorialStep } from '../../types/tutorial';
 
 export const tutorialSteps: TutorialStep[] = [
   {

@@ -1,5 +1,5 @@
-import { RootState } from '../../store';
-import { KedroProject } from '../../types/kedro';
+import type { RootState } from '../../store';
+import type { KedroProject } from '../../types/kedro';
 
 export const selectCurrentProject = (state: RootState): KedroProject | null => {
   return state.project.current;

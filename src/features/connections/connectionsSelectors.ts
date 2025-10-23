@@ -1,5 +1,5 @@
-import { RootState } from '../../store';
-import { KedroConnection } from '../../types/kedro';
+import type { RootState } from '../../store';
+import type { KedroConnection } from '../../types/kedro';
 
 export const selectAllConnections = (state: RootState): KedroConnection[] => {
   return state.connections.allIds.map((id) => state.connections.byId[id]);

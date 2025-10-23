@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { useAppDispatch } from '../../../store/hooks';
 import { updateDataset, deleteDataset } from '../../../features/datasets/datasetsSlice';
-import { KedroDataset, DatasetType } from '../../../types/kedro';
+import type { KedroDataset, DatasetType } from '../../../types/kedro';
 import { Button } from '../../UI/Button/Button';
 import { Input } from '../../UI/Input/Input';
 import './DatasetConfigForm.scss';

@@ -201,7 +201,7 @@ function checkDuplicateNames(state: RootState): ValidationError[] {
   });
 
   // Check for duplicate node names
-  nodeNames.forEach((nodeIds, name) => {
+  nodeNames.forEach((nodeIds, _name) => {
     if (nodeIds.length > 1) {
       nodeIds.forEach((nodeId) => {
         errors.push({
@@ -217,7 +217,7 @@ function checkDuplicateNames(state: RootState): ValidationError[] {
   });
 
   // Check for duplicate dataset names
-  datasetNames.forEach((datasetIds, name) => {
+  datasetNames.forEach((datasetIds, _name) => {
     if (datasetIds.length > 1) {
       datasetIds.forEach((datasetId) => {
         errors.push({

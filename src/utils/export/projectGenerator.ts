@@ -32,7 +32,7 @@ export async function generateKedroProject(
   state: RootState,
   metadata: ProjectMetadata
 ): Promise<Blob> {
-  const { projectName, pythonPackage, pipelineName } = metadata;
+  const { pythonPackage, pipelineName } = metadata;
 
   // Create ZIP instance
   const zip = new JSZip();

@@ -14,7 +14,6 @@ interface EdgeContextMenuProps {
 }
 
 export const EdgeContextMenu: React.FC<EdgeContextMenuProps> = ({
-  edgeId,
   x,
   y,
   open,

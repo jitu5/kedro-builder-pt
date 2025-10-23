@@ -168,4 +168,18 @@
       }
     }
   }
+
+  // Disabled state
+  &--disabled {
+    opacity: 0.5;
+    cursor: not-allowed !important;
+    pointer-events: none;
+
+    &:hover {
+      background: var(--color-bg-2);
+      border-color: var(--color-border-line);
+      transform: none;
+      box-shadow: none;
+    }
+  }
 }

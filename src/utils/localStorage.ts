@@ -2,8 +2,8 @@
  * localStorage utility functions for persisting project state
  */
 
-import { RootState } from '../types/redux';
-import { KedroProject, KedroNode, KedroDataset, KedroConnection } from '../types/kedro';
+import type { RootState } from '../types/redux';
+import type { KedroProject, KedroNode, KedroDataset, KedroConnection } from '../types/kedro';
 
 const STORAGE_KEY = 'kedro_builder_current_project';
 

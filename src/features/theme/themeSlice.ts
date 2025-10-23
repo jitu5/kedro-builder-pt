@@ -1,5 +1,6 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { ThemeState } from '../../types/redux';
+import { createSlice } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import type { ThemeState } from '../../types/redux';
 
 // Load theme from localStorage or default to dark
 const savedTheme = localStorage.getItem('kedro_builder_theme') as 'light' | 'dark' | null;

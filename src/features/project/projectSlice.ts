@@ -1,6 +1,7 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { ProjectState } from '../../types/redux';
-import { KedroProject, ProjectMetadata } from '../../types/kedro';
+import { createSlice } from '@reduxjs/toolkit';
+import type { PayloadAction } from '@reduxjs/toolkit';
+import type { ProjectState } from '../../types/redux';
+import type { KedroProject, ProjectMetadata } from '../../types/kedro';
 
 const initialState: ProjectState = {
   current: null,
