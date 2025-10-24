@@ -2,38 +2,26 @@
  * Generate Kedro pipeline registry and settings
  */
 
-import type { ProjectMetadata } from './staticFilesGenerator';
-
 /**
  * Generate pipeline_registry.py
  */
-export function generatePipelineRegistry(metadata: ProjectMetadata): string {
-  const { pythonPackage, pipelineName } = metadata;
+export function generatePipelineRegistry(): string {
 
-  return `"""Project pipelines registry.
+  return `"""Project pipelines."""
 
-This module registers all pipelines in the project. Each pipeline should be
-imported and added to the dictionary returned by register_pipelines().
-"""
-
-from typing import Dict
+from kedro.framework.project import find_pipelines
 from kedro.pipeline import Pipeline
-from ${pythonPackage}.pipelines import ${pipelineName}
 
 
-def register_pipelines() -> Dict[str, Pipeline]:
-    """
-    Register the project's pipelines.
+def register_pipelines() -> dict[str, Pipeline]:
+    """Register the project's pipelines.
 
     Returns:
-        A mapping from pipeline names to Pipeline objects.
+        A mapping from pipeline names to \`\`Pipeline\`\` objects.
     """
-    ${pipelineName}_pipeline = ${pipelineName}.create_pipeline()
-
-    return {
-        "__default__": ${pipelineName}_pipeline,
-        "${pipelineName}": ${pipelineName}_pipeline,
-    }
+    pipelines = find_pipelines()
+    pipelines["__default__"] = sum(pipelines.values())
+    return pipelines
 `;
 }
 
@@ -41,38 +29,52 @@ def register_pipelines() -> Dict[str, Pipeline]:
  * Generate settings.py
  */
 export function generateSettings(): string {
-  return `"""Project settings.
+  return `"""Project settings. There is no need to edit this file unless you want to change values
+from the Kedro defaults. For further information, including these default values, see
+https://docs.kedro.org/en/stable/kedro_project_setup/settings.html."""
 
-This file configures Kedro's behavior for this project. You can override
-default Kedro settings here.
-"""
+# Instantiated project hooks.
+# For example, after creating a hooks.py and defining a ProjectHooks class there, do
+# from <package_name>.hooks import ProjectHooks
 
-from kedro.config import OmegaConfigLoader
+# Hooks are executed in a Last-In-First-Out (LIFO) order.
+# HOOKS = (ProjectHooks(),)
 
-# Instantiate and list your project hooks here
-HOOKS = ()
+# Installed plugins for which to disable hook auto-registration.
+# DISABLE_HOOKS_FOR_PLUGINS = ("kedro-viz",)
 
-# List the installed plugins for which to disable auto-registry
-DISABLE_HOOKS_FOR_PLUGINS = ()
+# Class that manages storing KedroSession data.
+# from kedro.framework.session.store import BaseSessionStore
+# SESSION_STORE_CLASS = BaseSessionStore
+# Keyword arguments to pass to the \`SESSION_STORE_CLASS\` constructor.
+# SESSION_STORE_ARGS = {
+#     "path": "./sessions"
+# }
 
-# Define where to store data from different data layers
-DATA_LAYER_MAPPING = {
-    "raw": ["01_raw"],
-    "intermediate": ["02_intermediate"],
-    "primary": ["03_primary"],
-    "feature": ["04_feature"],
-    "model_input": ["05_model_input"],
-    "models": ["06_models"],
-    "model_output": ["07_model_output"],
-    "reporting": ["08_reporting"],
-}
+# Directory that holds configuration.
+# CONF_SOURCE = "conf"
 
-# Configure the OmegaConfigLoader
+# Class that manages how configuration is loaded.
+from kedro.config import OmegaConfigLoader  # noqa: E402
+
 CONFIG_LOADER_CLASS = OmegaConfigLoader
+# Keyword arguments to pass to the \`CONFIG_LOADER_CLASS\` constructor.
 CONFIG_LOADER_ARGS = {
     "base_env": "base",
     "default_run_env": "local",
+#     "config_patterns": {
+#         "spark" : ["spark*/"],
+#         "parameters": ["parameters*", "parameters*/**", "**/parameters*"],
+#     }
 }
+
+# Class that manages Kedro's library components.
+# from kedro.framework.context import KedroContext
+# CONTEXT_CLASS = KedroContext
+
+# Class that manages the Data Catalog.
+# from kedro.io import DataCatalog
+# DATA_CATALOG_CLASS = DataCatalog
 `;
 }
 

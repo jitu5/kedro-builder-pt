@@ -22,9 +22,27 @@ export const ValidationItem: React.FC<ValidationItemProps> = ({ issue }) => {
     if (issue.componentType === 'node' && nodes[issue.componentId]) {
       dispatch(selectNode(issue.componentId));
       dispatch(openConfigPanel({ type: 'node', id: issue.componentId }));
+
+      // Dispatch custom event to scroll component into view
+      setTimeout(() => {
+        window.dispatchEvent(
+          new CustomEvent('focusNode', {
+            detail: { nodeId: issue.componentId },
+          })
+        );
+      }, 100);
     } else if (issue.componentType === 'dataset' && datasets[issue.componentId]) {
       dispatch(selectDataset(issue.componentId));
       dispatch(openConfigPanel({ type: 'dataset', id: issue.componentId }));
+
+      // Dispatch custom event to scroll component into view
+      setTimeout(() => {
+        window.dispatchEvent(
+          new CustomEvent('focusNode', {
+            detail: { nodeId: issue.componentId },
+          })
+        );
+      }, 100);
     }
     // For 'pipeline' or 'connection' types, we just highlight the issue
   };

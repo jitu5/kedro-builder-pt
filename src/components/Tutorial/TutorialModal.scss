@@ -174,22 +174,56 @@
 
   &__actions {
     display: flex;
-    gap: 1rem;
+    justify-content: space-between;
+    align-items: center;
     padding-top: 1.5rem;
     border-top: 1px solid var(--color-border-line);
   }
 
+  &__actions-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  &__actions-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__pagination {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    font-weight: 500;
+  }
+
   &__button {
-    flex: 1;
-    padding: 0.875rem 1.5rem;
+    padding: 0.75rem 1.25rem;
     font-size: 0.9375rem;
     font-weight: 500;
     border-radius: 8px;
     border: none;
     cursor: pointer;
     transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
 
     &--skip {
+      background: transparent;
+      color: var(--color-text-muted);
+      padding: 0.5rem 0;
+      font-size: 0.875rem;
+
+      &:hover {
+        color: var(--color-text);
+        text-decoration: underline;
+      }
+    }
+
+    &--back {
       background: transparent;
       color: var(--color-text-muted);
       border: 1px solid var(--color-border-line);

@@ -1,14 +1,14 @@
 # Essential Context for Kedro Builder - Current State
 
 ## Project Status
-- **Completed:** Phases 1-5 (Core Builder + UX + localStorage Persistence)
-- **Latest Session:** Bug fixes (duplicate connections), theme persistence, UI improvements
-- **Current:** All working features tested and stable
-- **Dev Server:** http://localhost:5179/ (running, no errors)
+- **Completed:** Phases 1-5 (Core Builder + UX + localStorage Persistence) + Phase 1 UX Improvements
+- **Latest Session:** Phase 1 UX Improvements (Canvas Panning, Connection Selection, Config Panel Auto-show/close)
+- **Current:** Implementing bug fixes for Phase 1
+- **Dev Server:** http://localhost:5173/ (running, no errors)
 - **Stack:** Vite 5.4.8, React 18, TypeScript (strict), Node 18.20.1
-- **Last Updated:** 2025-10-17 (Session: Phase 5 Complete + Bug Fixes)
-- **Documentation:** See PROJECT_ARCHITECTURE.md for comprehensive overview
-- **Context Status:** 60% used, ready for Phase 6
+- **Last Updated:** 2025-01-23 (Session: Phase 1 UX Improvements)
+- **Documentation:** See PHASE_1_UX_IMPROVEMENTS.md for latest changes
+- **Context Status:** Ready for Phase 2
 
 ## Core Dependencies
 ```json
@@ -355,43 +355,215 @@ if (savedProject) {
 - Documentation: PHASE_*_COMPLETE.md files
 - Implementation plan: UPDATED_IMPLEMENTATION_PLAN.md
 
+## Phase 1 UX Improvements (COMPLETED - 2025-01-23)
+
+### Implemented Features
+1. ✅ **Canvas Panning** - Spacebar + drag mode (like Figma)
+   - Hold Space → pan mode with grab cursor
+   - Works with middle-mouse as alternative
+   - Dynamic `panOnDrag` and `selectionOnDrag` toggle
+
+2. ✅ **Connection Selection** - 20px hitbox + hover state
+   - Invisible wide path for easier clicking
+   - Hover state with color change and glow
+   - Selected state with stronger glow effect
+
+3. ✅ **Multi-Delete Confirmation** - Browser confirm dialog
+   - Shows count: "Delete 5 selected items?"
+   - Only for 2+ items (single delete no confirmation)
+   - Works for nodes, datasets, connections
+
+4. ✅ **Auto-Show Config Panel** - Opens on drop
+   - Component auto-selected after drop
+   - Config panel opens immediately
+   - Zero extra clicks needed
+
+5. ✅ **Auto-Close Config Panel** - Closes when canvas empty
+   - Detects when all nodes/datasets deleted
+   - No blank config panel states
+
+### Known Issues (Being Fixed)
+- ❌ Config panel not opening when node dropped from EmptyState quick actions
+- ❌ Cursor doesn't change to hand when spacebar pressed over canvas
+- ❌ Connection selection still difficult (animated/dotted lines)
+- ❌ Right-click context menu needs improvement (show BulkActionsToolbar instead)
+
+### Files Modified
+- `src/components/Canvas/PipelineCanvas.tsx` - Panning, auto-show/close, confirmations
+- `src/components/Canvas/CustomEdge/CustomEdge.tsx` - Hitbox, hover state
+- `src/components/Canvas/CustomEdge/CustomEdge.scss` - Hover styling
+- Documentation: `PHASE_1_UX_IMPROVEMENTS.md`, `README.md`
+
+---
+
 ## Next Steps (Remaining Phases)
 
-### Phase 6: Validation System (NEXT)
+### Phase 2: Tutorial & UI Polish (NEXT - 3-5 hours)
+**Priority:** High - Onboarding improvements
+
+1. **Tutorial Navigation**
+   - Add Back button (except first step)
+   - Align "Skip tutorial" to left
+   - Align pagination "1 / 4" to left
+   - Change last button to "Finish" instead of "Next"
+
+2. **Tutorial Mode Protection**
+   - Disable "Create New Project" button during tutorial
+   - Auto-open ProjectSetupModal after tutorial finishes
+
+3. **Component Palette**
+   - Reorder: Dataset component first, Node second
+   - Reasoning: Datasets are simpler, better for beginners
+
+4. **Canvas Polish**
+   - Remove "Untitled project" label from EmptyState (duplicate)
+   - View Code button already disabled (done in Phase 1)
+
+5. **Dataset Filepath UX**
+   - Add placeholder: "data/01_raw/my_data.csv"
+   - Add helper text: "Relative path from project root. Auto-inferred if left empty."
+   - Add "Use suggested path" button
+   - Auto-complete based on dataset type and name
+
+**Files to modify:**
+- `src/components/Tutorial/TutorialModal.tsx` - Navigation
+- `src/components/Tutorial/TutorialModal.scss` - Layout
+- `src/components/Canvas/EmptyState/EmptyState.tsx` - Remove label
+- `src/components/Palette/ComponentPalette.tsx` - Reorder
+- `src/components/ConfigPanel/ConfigPanel.tsx` - Dataset filepath
+- `src/features/ui/uiSlice.ts` - Tutorial state
+
+---
+
+### Phase 3: Validation Panel Enhancements (6-8 hours)
+**Priority:** Medium - Better error handling
+
+1. **Clickable Validation Messages**
+   - Click error → selects component
+   - Opens config panel automatically
+   - Scrolls component into view
+   - Highlights problematic field
+
+2. **Post-Export Visual Feedback**
+   - Success toast instead of yellow borders
+   - Less intrusive, cleaner UX
+   - Use toast library (react-hot-toast)
+
+**Technical approach:**
+```typescript
+// ValidationItem onClick handler
+const handleErrorClick = (error: ValidationError) => {
+  const { componentId, componentType } = error;
+
+  // Select component
+  if (componentType === 'node') {
+    dispatch(selectNode(componentId));
+  } else if (componentType === 'dataset') {
+    dispatch(selectDataset(componentId));
+  }
+
+  // Open/update config panel
+  dispatch(setShowConfigPanel(true));
+
+  // Scroll into view
+  const element = document.querySelector(`[data-id="${componentId}"]`);
+  element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  // Highlight field (new state)
+  dispatch(setHighlightField(error.fieldName));
+};
+```
+
+**Files to modify:**
+- `src/components/ValidationPanel/ValidationItem.tsx`
+- `src/components/ValidationPanel/ValidationPanel.tsx`
+- `src/features/ui/uiSlice.ts` - Add `highlightField` state
+- `src/components/ConfigPanel/ConfigPanel.tsx` - Highlight logic
+- Install: `npm install react-hot-toast`
+
+---
+
+### Phase 4: Undo/Redo System (6-8 hours)
+**Priority:** Lower - Power user feature
+
+1. **Redux Undo/Redo**
+   - Use `redux-undo` library
+   - Wrap reducers with `undoable()`
+   - Add undo/redo buttons in header
+   - Keyboard shortcuts: Ctrl+Z, Ctrl+Y
+
+2. **Implementation**
+```typescript
+import undoable, { ActionCreators } from 'redux-undo';
+
+// Wrap reducers
+const undoableNodes = undoable(nodesReducer, {
+  limit: 50,
+  filter: excludeAction(['nodes/setHovered']),
+});
+
+// UI buttons
+<button onClick={() => dispatch(ActionCreators.undo())} disabled={!canUndo}>
+  <Undo size={18} />
+</button>
+```
+
+3. **Keyboard Shortcuts**
+   - Ctrl+Z / Cmd+Z → Undo
+   - Ctrl+Y / Cmd+Shift+Z → Redo
+   - Show toast with action description
+
+**Files to modify:**
+- `src/store/index.ts` - Wrap reducers
+- `src/components/App/App.tsx` - Add buttons, keyboard handler
+- Install: `npm install redux-undo`
+
+---
+
+### Phase 5: Advanced Validation (Already Implemented)
+✅ Validation system already complete (Phase 6 in old plan)
+- See `src/utils/validation.ts`
 - Circular dependency detection
-- Orphaned nodes/datasets check
-- Type compatibility validation
-- Missing input/output warnings
-- Validation panel with error/warning lists
+- Duplicate name checks
+- Invalid naming validation
+- Orphaned component warnings
 
-### Phase 7: Code Generation & Preview
-- Handlebars templates (catalog.yml, nodes.py, pipeline.py)
-- Syntax-highlighted code preview
-- Live updates as pipeline changes
-- Copy-to-clipboard buttons
+---
 
-### Phase 7: ZIP Download
-- JSZip integration for project export
-- Full Kedro project structure generation
-- Include all data layers, conf/, src/ folders
-- Download button functionality
+### Phase 6: Future Enhancements (Low Priority)
 
-### Phase 8: Export & Multi-Project
-- Export project as JSON file (download)
-- Import project from JSON file
-- Multi-project support in localStorage
-- Project list management UI
+1. **Import/Export Projects**
+   - Export pipeline as JSON
+   - Import from JSON file
+   - Share pipelines between users
 
-### Phase 9: Advanced Features
-- Undo/redo with Redux middleware
-- Additional keyboard shortcuts
-- Template library (pre-built pipelines)
-- Error boundaries
+2. **Template Library**
+   - Pre-built pipeline templates
+   - Data ingestion template
+   - ML training template
+   - ETL template
 
-### Phase 10: Deployment
-- Production build optimization
-- GitHub Pages deployment
-- Documentation
+3. **Keyboard Shortcuts Panel**
+   - Press `?` to show shortcuts
+   - Searchable command palette (Cmd+K)
+
+4. **Collaborative Features**
+   - Share link to pipeline (encode in URL)
+   - Export as shareable link
+   - Comments on nodes
+
+---
+
+### Phase 7: Deployment (Final Phase)
+1. **Documentation**
+   - User guide
+   - Video tutorials
+   - API documentation
+
+2. **Performance Optimization**
+   - Code splitting
+   - Lazy loading
+   - Bundle analysis
 
 ## Key Implementation Notes
 - ReactFlow state syncs to Redux on drag end (not during drag)

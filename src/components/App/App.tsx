@@ -27,6 +27,7 @@ import { ValidationPanel } from '../ValidationPanel/ValidationPanel';
 import { ExportWizard } from '../ExportWizard/ExportWizard';
 import { generateKedroProject, downloadProject } from '../../utils/export';
 import { Code, Download, Edit2 } from 'lucide-react';
+import toast, { Toaster } from 'react-hot-toast';
 import './App.scss';
 
 function App() {
@@ -99,6 +100,24 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - run only once on mount
 
+  // Listen for config updates to refresh validation if export wizard is open
+  useEffect(() => {
+    const handleConfigUpdate = () => {
+      if (showExportWizard) {
+        // Re-run validation
+        const state = store.getState();
+        const validationResult = validatePipeline(state);
+
+        // Update validation results
+        dispatch(setValidationResults(validationResult));
+        setExportValidationResult(validationResult);
+      }
+    };
+
+    window.addEventListener('configUpdated', handleConfigUpdate);
+    return () => window.removeEventListener('configUpdated', handleConfigUpdate);
+  }, [showExportWizard, dispatch]);
+
   const handleOpenTutorial = () => {
     dispatch(openTutorial());
   };
@@ -146,18 +165,30 @@ function App() {
       // Close dialog
       setShowExportWizard(false);
 
+      // Clear validation results to remove yellow warning borders
+      dispatch(setValidationResults({ errors: [], warnings: [], isValid: true }));
+      setExportValidationResult(null);
+
       console.log('✅ Project exported successfully!');
-      alert(
-        `Project "${metadata.projectName}" exported successfully!\n\n` +
-          'Next steps:\n' +
-          '1. Extract the ZIP file\n' +
-          `2. cd ${metadata.projectName}\n` +
-          '3. pip install -e .\n' +
-          '4. kedro run'
+
+      // Show success toast
+      toast.success(
+        `Project "${metadata.projectName}" exported successfully!`,
+        {
+          duration: 5000,
+          position: 'bottom-right',
+          style: {
+            maxWidth: '400px',
+            wordBreak: 'break-word',
+          },
+        }
       );
     } catch (error) {
       console.error('❌ Export failed:', error);
-      alert('Failed to export project. Please try again.');
+      toast.error('Failed to export project. Please try again.', {
+        duration: 4000,
+        position: 'bottom-right',
+      });
     }
   };
 
@@ -175,23 +206,23 @@ function App() {
               </div>
 
               <div className="app__header-project-controls">
-                {/* Project name display */}
-                <p
-                  className={`app__project-name ${!hasActiveProject ? 'app__project-name--disabled' : ''}`}
-                >
-                  {currentProject ? currentProject.name : 'Untitled project'}
-                </p>
+                {/* Project name display - only show if project exists */}
+                {hasActiveProject && currentProject && (
+                  <>
+                    <p className="app__project-name">
+                      {currentProject.name}
+                    </p>
 
-                {/* Edit Project Button - Opens ProjectSetupModal */}
-                {hasActiveProject && (
-                  <button
-                    className="app__project-name-edit"
-                    onClick={handleEditProject}
-                    title="Edit project"
-                  >
-                    <Edit2 size={16} />
-                    Edit
-                  </button>
+                    {/* Edit Project Button - Opens ProjectSetupModal */}
+                    <button
+                      className="app__project-name-edit"
+                      onClick={handleEditProject}
+                      title="Edit project"
+                    >
+                      <Edit2 size={16} />
+                      Edit
+                    </button>
+                  </>
                 )}
               </div>  
             </div>
@@ -232,7 +263,7 @@ function App() {
             <ComponentPalette />
           </aside>
           <div className="app__canvas">
-            <PipelineCanvas />
+            <PipelineCanvas exportWizardOpen={showExportWizard} />
           </div>
           {showConfigPanel && (
             <aside className="app__config-panel">
@@ -250,11 +281,19 @@ function App() {
       {exportValidationResult && (
         <ExportWizard
           isOpen={showExportWizard}
-          onClose={() => setShowExportWizard(false)}
+          onClose={() => {
+            setShowExportWizard(false);
+            // Clear validation results to remove yellow warning borders
+            dispatch(setValidationResults({ errors: [], warnings: [], isValid: true }));
+            setExportValidationResult(null);
+          }}
           validationResult={exportValidationResult}
           onExport={handleConfirmExport}
         />
       )}
+
+      {/* Toast notifications */}
+      <Toaster />
     </div>
   );
 }

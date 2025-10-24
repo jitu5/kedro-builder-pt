@@ -42,23 +42,34 @@ The application will be available at [http://localhost:5173/](http://localhost:5
 
 ## 📁 Project Status
 
-### ✅ Phase 1: Foundation (COMPLETE)
-- TypeScript setup with strict mode
-- Redux Toolkit store with typed hooks
-- SCSS with Kedro-Viz styling
-- Basic three-panel layout
-- Theme switching (light/dark)
-- All core type definitions
+### ✅ Core Features (COMPLETE)
+- ✅ Visual pipeline building with ReactFlow
+- ✅ Node and dataset configuration panels
+- ✅ Connection management
+- ✅ Validation system
+- ✅ Kedro project code generation
+- ✅ Export to ZIP download
+- ✅ Interactive tutorial system
+- ✅ Theme switching (light/dark)
 
-See [PHASE_1_COMPLETE.md](./PHASE_1_COMPLETE.md) for details.
+### ✅ Phase 1: UX Improvements (COMPLETE - 2025-01-23)
+**Critical canvas interaction and workflow improvements:**
+- ✅ Spacebar + drag pan mode (like Figma)
+- ✅ Improved connection selection (20px hitbox + hover state)
+- ✅ Multi-select delete confirmations
+- ✅ Auto-show config panel when dropping components
+- ✅ Auto-close config panel when canvas is empty
 
-### 🔄 Next: Phase 2 - ReactFlow Canvas Setup
-- ReactFlow integration
-- Custom node components
-- Drag-and-drop from sidebar
-- Minimap and controls
+See [PHASE_1_UX_IMPROVEMENTS.md](./PHASE_1_UX_IMPROVEMENTS.md) for complete details.
 
-See [UPDATED_IMPLEMENTATION_PLAN.md](../UPDATED_IMPLEMENTATION_PLAN.md) for full roadmap.
+### 🔄 Next: Phase 2 - Tutorial & UI Polish
+- Tutorial navigation (back button, pagination alignment)
+- Tutorial mode protection
+- Component palette reordering
+- Empty state cleanup
+- Dataset filepath UX improvements
+
+See documentation files for implementation history and roadmap.
 
 ## 🎨 Development
 

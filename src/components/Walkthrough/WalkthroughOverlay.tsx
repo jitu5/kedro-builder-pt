@@ -161,44 +161,30 @@ export const WalkthroughOverlay: React.FC = () => {
           </div>
 
           <div className="walkthrough-overlay__modal-footer">
-            <button
-              className="walkthrough-overlay__button walkthrough-overlay__button--secondary"
-              onClick={handleSkip}
-            >
-              Skip tutorial
-            </button>
-
-            <div className="walkthrough-overlay__navigation">
+            <div className="walkthrough-overlay__footer-left">
               <button
-                className="walkthrough-overlay__nav-button walkthrough-overlay__nav-button--back"
-                onClick={handleBack}
-                aria-label="Previous step"
+                className="walkthrough-overlay__button walkthrough-overlay__button--skip"
+                onClick={handleSkip}
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M15 18L9 12L15 6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                Skip tutorial
               </button>
+              <span className="walkthrough-overlay__step-indicator-text">
+                {currentStep} / {walkthroughSteps.length}
+              </span>
+            </div>
 
+            <div className="walkthrough-overlay__footer-right">
               <button
-                className="walkthrough-overlay__nav-button walkthrough-overlay__nav-button--next"
-                onClick={handleNext}
-                aria-label="Next step"
+                className="walkthrough-overlay__button walkthrough-overlay__button--back"
+                onClick={handleBack}
               >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M9 18L15 12L9 6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                Back
+              </button>
+              <button
+                className="walkthrough-overlay__button walkthrough-overlay__button--primary"
+                onClick={handleNext}
+              >
+                {isLastStep ? 'Finish' : 'Next'}
               </button>
             </div>
           </div>
@@ -225,46 +211,29 @@ export const WalkthroughOverlay: React.FC = () => {
             </div>
 
             <div className="walkthrough-overlay__tooltip-footer">
-              <button
-                className="walkthrough-overlay__button walkthrough-overlay__button--text"
-                onClick={handleSkip}
-              >
-                Skip tutorial
-              </button>
+              <div className="walkthrough-overlay__footer-left">
+                <button
+                  className="walkthrough-overlay__button walkthrough-overlay__button--skip"
+                  onClick={handleSkip}
+                >
+                  Skip tutorial
+                </button>
+              </div>
 
-              <div className="walkthrough-overlay__navigation">
+              <div className="walkthrough-overlay__footer-right">
                 {currentStep > 1 && (
                   <button
-                    className="walkthrough-overlay__nav-button walkthrough-overlay__nav-button--back"
+                    className="walkthrough-overlay__button walkthrough-overlay__button--back"
                     onClick={handleBack}
-                    aria-label="Previous step"
                   >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M15 18L9 12L15 6"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                    Back
                   </button>
                 )}
-
                 <button
-                  className="walkthrough-overlay__nav-button walkthrough-overlay__nav-button--next"
+                  className="walkthrough-overlay__button walkthrough-overlay__button--primary"
                   onClick={handleNext}
-                  aria-label="Next step"
                 >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M9 18L15 12L9 6"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  {isLastStep ? 'Finish' : 'Next'}
                 </button>
               </div>
             </div>

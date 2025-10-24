@@ -36,7 +36,7 @@ This module defines the structure of your pipeline by connecting nodes
 with their input and output datasets.
 """
 
-from kedro.pipeline import Pipeline, node${imports ? '\n' : ''}${imports ? `from .nodes import ${imports}` : ''}
+from kedro.pipeline import Node, Pipeline${imports ? '\n' : ''}${imports ? `from .nodes import ${imports}` : ''}
 
 
 def create_pipeline(**kwargs) -> Pipeline:
@@ -68,13 +68,11 @@ function generateNodeDefinition(
 
   const inputsStr = formatNodeInputs(inputs);
   const outputsStr = formatNodeOutputs(outputs);
-  const nodeName = `${funcName}_node`;
 
-  return `node(
+  return `Node(
                 func=${funcName},
                 inputs=${inputsStr},
                 outputs=${outputsStr},
-                name="${nodeName}",
             )`;
 }
 

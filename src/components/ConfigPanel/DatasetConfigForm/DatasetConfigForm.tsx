@@ -1,9 +1,12 @@
 import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
 import { useAppDispatch } from '../../../store/hooks';
 import { updateDataset, deleteDataset } from '../../../features/datasets/datasetsSlice';
+import { clearPendingComponent } from '../../../features/ui/uiSlice';
 import type { KedroDataset, DatasetType } from '../../../types/kedro';
 import { Button } from '../../UI/Button/Button';
 import { Input } from '../../UI/Input/Input';
+import { FilepathBuilder } from '../../UI/FilepathBuilder/FilepathBuilder';
 import './DatasetConfigForm.scss';
 
 interface DatasetFormData {
@@ -28,6 +31,37 @@ const DATASET_TYPES: { value: DatasetType; label: string }[] = [
   { value: 'sql', label: 'SQL' },
 ];
 
+// Helper function to parse filepath into parts
+const parseFilepath = (filepath: string): { baseLocation: string; dataLayer: string; fileName: string } => {
+  if (!filepath || filepath.trim() === '') {
+    return { baseLocation: 'data', dataLayer: '01_raw', fileName: '' };
+  }
+
+  const parts = filepath.split('/').filter(Boolean);
+
+  if (parts.length >= 3) {
+    return {
+      baseLocation: parts[0],
+      dataLayer: parts[1],
+      fileName: parts.slice(2).join('/'),
+    };
+  } else if (parts.length === 2) {
+    return {
+      baseLocation: 'data',
+      dataLayer: parts[0],
+      fileName: parts[1],
+    };
+  } else if (parts.length === 1) {
+    return {
+      baseLocation: 'data',
+      dataLayer: '01_raw',
+      fileName: parts[0],
+    };
+  }
+
+  return { baseLocation: 'data', dataLayer: '01_raw', fileName: '' };
+};
+
 export const DatasetConfigForm: React.FC<DatasetConfigFormProps> = ({ dataset, onClose }) => {
   const dispatch = useAppDispatch();
 
@@ -35,6 +69,7 @@ export const DatasetConfigForm: React.FC<DatasetConfigFormProps> = ({ dataset, o
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isDirty },
   } = useForm<DatasetFormData>({
     defaultValues: {
@@ -46,6 +81,26 @@ export const DatasetConfigForm: React.FC<DatasetConfigFormProps> = ({ dataset, o
   });
 
   const watchType = watch('type');
+
+  // Parse initial filepath into parts
+  const initialParts = parseFilepath(dataset.filepath || '');
+  const [baseLocation, setBaseLocation] = useState(initialParts.baseLocation);
+  const [dataLayer, setDataLayer] = useState(initialParts.dataLayer);
+  const [fileName, setFileName] = useState(initialParts.fileName);
+
+  // Update form filepath when parts change
+  useEffect(() => {
+    const base = baseLocation.trim() || 'data';
+    const layer = dataLayer.trim();
+    const file = fileName.trim();
+
+    if (file) {
+      const fullPath = `${base}/${layer}/${file}`;
+      setValue('filepath', fullPath, { shouldDirty: true });
+    } else {
+      setValue('filepath', '', { shouldDirty: true });
+    }
+  }, [baseLocation, dataLayer, fileName, setValue]);
 
   const onSubmit = (data: DatasetFormData) => {
     dispatch(
@@ -59,12 +114,18 @@ export const DatasetConfigForm: React.FC<DatasetConfigFormProps> = ({ dataset, o
         },
       })
     );
+
+    // Don't clear pending here - ConfigPanel's handleClose will check if valid and clear it
     onClose();
+
+    // Dispatch event to refresh validation if export wizard is open
+    window.dispatchEvent(new CustomEvent('configUpdated'));
   };
 
   const handleDelete = () => {
     if (window.confirm(`Are you sure you want to delete dataset "${dataset.name}"?`)) {
       dispatch(deleteDataset(dataset.id));
+      dispatch(clearPendingComponent());
       onClose();
     }
   };
@@ -111,11 +172,14 @@ export const DatasetConfigForm: React.FC<DatasetConfigFormProps> = ({ dataset, o
 
       {watchType !== 'memory' && (
         <div className="dataset-config-form__section">
-          <Input
-            label="Filepath"
-            placeholder="e.g., companies.csv"
-            helperText="Relative path in the data folder (leave empty to auto-generate)"
-            {...register('filepath')}
+          <FilepathBuilder
+            baseLocation={baseLocation}
+            dataLayer={dataLayer}
+            fileName={fileName}
+            datasetType={watchType}
+            onBaseLocationChange={setBaseLocation}
+            onDataLayerChange={setDataLayer}
+            onFileNameChange={setFileName}
           />
         </div>
       )}

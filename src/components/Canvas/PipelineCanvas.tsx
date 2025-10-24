@@ -38,12 +38,11 @@ import {
 } from '../../features/datasets/datasetsSlice';
 import {
   addConnection,
-  deleteConnection,
   selectConnection,
   clearConnectionSelection,
   deleteConnections,
 } from '../../features/connections/connectionsSlice';
-import { openConfigPanel, closeConfigPanel } from '../../features/ui/uiSlice';
+import { openConfigPanel, closeConfigPanel, setPendingComponent } from '../../features/ui/uiSlice';
 import { selectAllNodes } from '../../features/nodes/nodesSelectors';
 import { selectAllDatasets } from '../../features/datasets/datasetsSelectors';
 import { selectAllConnections } from '../../features/connections/connectionsSelectors';
@@ -52,7 +51,6 @@ import { CustomNode } from './CustomNode/CustomNode';
 import { DatasetNode } from './DatasetNode/DatasetNode';
 import { CustomEdge } from './CustomEdge/CustomEdge';
 import { BulkActionsToolbar } from './BulkActionsToolbar/BulkActionsToolbar';
-import { EdgeContextMenu } from './EdgeContextMenu/EdgeContextMenu';
 import { EmptyState } from './EmptyState/EmptyState';
 import type { NodeType, DatasetType } from '../../types/kedro';
 
@@ -67,9 +65,13 @@ const edgeTypes = {
   kedroEdge: CustomEdge,
 };
 
-const PipelineCanvasInner = () => {
+interface PipelineCanvasProps {
+  exportWizardOpen?: boolean;
+}
+
+const PipelineCanvasInner = ({ exportWizardOpen = false }: PipelineCanvasProps) => {
   const dispatch = useAppDispatch();
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, fitView, getNode } = useReactFlow();
 
   // Get data from Redux
   const reduxNodes = useAppSelector(selectAllNodes);
@@ -85,12 +87,8 @@ const PipelineCanvasInner = () => {
   // Track dragging state for empty canvas visual feedback
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
-  // Edge context menu state
-  const [contextMenu, setContextMenu] = useState<{
-    edgeId: string;
-    x: number;
-    y: number;
-  } | null>(null);
+  // Track spacebar press for pan mode (like Figma)
+  const [isPanMode, setIsPanMode] = useState(false);
 
   // Ref for ReactFlow wrapper to handle focus
   const reactFlowWrapper = useCallback((node: HTMLDivElement | null) => {
@@ -139,10 +137,16 @@ const PipelineCanvasInner = () => {
         animated: true,
         data: conn,
         selected: selectedEdgeIds.includes(conn.id),
-        // Make edges much easier to click
+        markerEnd: {
+          type: 'arrowclosed' as const,
+          width: 12,
+          height: 12,
+          color: selectedEdgeIds.includes(conn.id) ? 'var(--color-primary)' : 'var(--color-connection)',
+        },
         style: {
-          strokeWidth: 2,
+          strokeWidth: selectedEdgeIds.includes(conn.id) ? 4 : 3,
           stroke: selectedEdgeIds.includes(conn.id) ? 'var(--color-primary)' : 'var(--color-connection)',
+          strokeDasharray: '5, 5',
         },
       })),
     [reduxConnections, selectedEdgeIds]
@@ -162,10 +166,27 @@ const PipelineCanvasInner = () => {
     setEdges(initialEdges);
   }, [initialEdges, setEdges]);
 
+  // Auto-close config panel when all components are deleted from canvas
+  const showConfigPanel = useAppSelector((state) => state.ui.showConfigPanel);
+  useEffect(() => {
+    // If config panel is open but there are no nodes or datasets, close it
+    if (showConfigPanel && reduxNodes.length === 0 && reduxDatasets.length === 0) {
+      dispatch(closeConfigPanel());
+    }
+  }, [showConfigPanel, reduxNodes.length, reduxDatasets.length, dispatch]);
+
   // Handle ReactFlow node deletion (triggered by Delete key via ReactFlow)
   const handleNodesDelete = useCallback(
     (nodesToDelete: Node[]) => {
       console.log('[Delete] Nodes to delete:', nodesToDelete.map(n => n.id));
+
+      // Show confirmation dialog for multi-delete
+      if (nodesToDelete.length > 1) {
+        const confirmMessage = `Delete ${nodesToDelete.length} selected items? This cannot be undone.`;
+        if (!window.confirm(confirmMessage)) {
+          return; // User cancelled
+        }
+      }
 
       // Separate nodes and datasets
       const nodeIdsToDelete: string[] = [];
@@ -205,6 +226,14 @@ const PipelineCanvasInner = () => {
     (edgesToDelete: Edge[]) => {
       console.log('[Delete] Edges to delete:', edgesToDelete.map(e => e.id));
 
+      // Show confirmation dialog for multi-delete
+      if (edgesToDelete.length > 1) {
+        const confirmMessage = `Delete ${edgesToDelete.length} selected connections? This cannot be undone.`;
+        if (!window.confirm(confirmMessage)) {
+          return; // User cancelled
+        }
+      }
+
       const edgeIds = edgesToDelete.map(edge => edge.id);
       if (edgeIds.length > 0) {
         dispatch(deleteConnections(edgeIds));
@@ -214,15 +243,20 @@ const PipelineCanvasInner = () => {
     [dispatch]
   );
 
-  // Handle keyboard shortcuts (Escape and Cmd+A)
+  // Handle keyboard shortcuts (Escape, Cmd+A, and Spacebar for pan mode)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Spacebar - enable pan mode (like Figma)
+      if (event.code === 'Space' && !isPanMode) {
+        event.preventDefault();
+        setIsPanMode(true);
+      }
+
       // Escape key - clear selection and close config panel
       if (event.key === 'Escape') {
         dispatch(clearSelection());
         dispatch(clearConnectionSelection());
         dispatch(closeConfigPanel());
-        setContextMenu(null);
       }
 
       // Cmd/Ctrl + A - select all
@@ -233,9 +267,41 @@ const PipelineCanvasInner = () => {
       }
     };
 
+    const handleKeyUp = (event: KeyboardEvent) => {
+      // Spacebar released - disable pan mode
+      if (event.code === 'Space' && isPanMode) {
+        setIsPanMode(false);
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [dispatch, reduxNodes, reduxDatasets]);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [dispatch, reduxNodes, reduxDatasets, isPanMode]);
+
+  // Listen for focus node event from validation panel
+  useEffect(() => {
+    const handleFocusNode = (event: any) => {
+      const { nodeId } = event.detail;
+      const node = getNode(nodeId);
+      if (node) {
+        // Center the node in view with animation
+        fitView({
+          nodes: [node],
+          duration: 800,
+          padding: 0.3,
+        });
+      }
+    };
+
+    window.addEventListener('focusNode', handleFocusNode);
+    return () => {
+      window.removeEventListener('focusNode', handleFocusNode);
+    };
+  }, [fitView, getNode]);
 
   // Sync position changes to Redux (immediate for smooth edges)
   const handleNodesChange = useCallback(
@@ -280,6 +346,14 @@ const PipelineCanvasInner = () => {
         targetHandle: connection.targetHandle || 'input',
         type: 'kedroEdge',
         animated: true,
+        markerEnd: {
+          type: 'arrowclosed',
+          width: 12,
+          height: 12,
+        },
+        style: {
+          strokeDasharray: '5, 5',
+        },
       };
 
       setEdges((eds) => addEdge(newEdge, eds) as any);
@@ -312,6 +386,10 @@ const PipelineCanvasInner = () => {
 
       if (!nodeType && !datasetType) return;
 
+      // Clear any existing selection before adding new component
+      dispatch(clearSelection());
+      dispatch(clearConnectionSelection());
+
       const position = screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
@@ -319,21 +397,41 @@ const PipelineCanvasInner = () => {
 
       if (nodeType) {
         // Drop processing node
+        const newNodeId = `node-${Date.now()}`;
         dispatch(
           addNode({
             type: nodeType as NodeType,
             position,
           })
         );
+
+        // Mark as pending (needs to be saved before staying on canvas)
+        dispatch(setPendingComponent({ type: 'node', id: newNodeId }));
+
+        // Auto-select and open config panel for the new node
+        setTimeout(() => {
+          dispatch(selectNode(newNodeId));
+          dispatch(openConfigPanel({ type: 'node', id: newNodeId }));
+        }, 10);
       } else if (datasetType) {
         // Drop dataset
+        const newDatasetId = `dataset-${Date.now()}`;
         dispatch(
           addDataset({
-            name: 'Unnamed Dataset',
+            name: '',
             type: datasetType as DatasetType,
             position,
           })
         );
+
+        // Mark as pending (needs to be saved before staying on canvas)
+        dispatch(setPendingComponent({ type: 'dataset', id: newDatasetId }));
+
+        // Auto-select and open config panel for the new dataset
+        setTimeout(() => {
+          dispatch(selectNode(newDatasetId));
+          dispatch(openConfigPanel({ type: 'dataset', id: newDatasetId }));
+        }, 10);
       }
     },
     [screenToFlowPosition, dispatch]
@@ -382,44 +480,37 @@ const PipelineCanvasInner = () => {
     [dispatch]
   );
 
-  // Handle edge click
+  // Handle edge click - select edge to show BulkActionsToolbar
   const handleEdgeClick: EdgeMouseHandler = useCallback(
     (event, edge) => {
       event.stopPropagation();
 
       if (event.metaKey || event.ctrlKey || event.shiftKey) {
-        // Multi-select edge
+        // Multi-select edge (adds to selection)
         dispatch(selectConnection(edge.id));
       } else {
-        // Single select edge
+        // Single select edge (clears other selections and closes config panel)
         dispatch(clearSelection());
+        dispatch(closeConfigPanel());
         dispatch(selectConnection(edge.id));
       }
-    },
-    [dispatch]
-  );
-
-  // Handle edge context menu (right-click)
-  const handleEdgeContextMenu: EdgeMouseHandler = useCallback(
-    (event, edge) => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      setContextMenu({
-        edgeId: edge.id,
-        x: event.clientX,
-        y: event.clientY,
-      });
-
-      // Select this edge
-      dispatch(clearSelection());
-      dispatch(selectConnection(edge.id));
+      // BulkActionsToolbar will automatically show when edge is selected
     },
     [dispatch]
   );
 
   // Bulk actions handlers
   const handleBulkDelete = useCallback(() => {
+    const totalSelected = selectedNodeIds.length + selectedEdgeIds.length;
+
+    // Show confirmation dialog for bulk delete
+    if (totalSelected > 1) {
+      const confirmMessage = `Delete ${totalSelected} selected items? This cannot be undone.`;
+      if (!window.confirm(confirmMessage)) {
+        return; // User cancelled
+      }
+    }
+
     if (selectedNodeIds.length > 0) {
       selectedNodeIds.forEach((id) => {
         if (id.startsWith('node-')) {
@@ -457,12 +548,16 @@ const PipelineCanvasInner = () => {
     dispatch(clearSelection());
     dispatch(clearConnectionSelection());
     dispatch(closeConfigPanel());
-    setContextMenu(null); // Close context menu
   }, [dispatch]);
 
   // Handle selection change from ReactFlow (box selection)
   const handleSelectionChange = useCallback(
     ({ nodes: selectedNodes }: OnSelectionChangeParams) => {
+      // Disable selection when export wizard is open
+      if (exportWizardOpen) {
+        return;
+      }
+
       const nodeIds = selectedNodes.map((n) => n.id);
 
       if (nodeIds.length > 0) {
@@ -470,7 +565,7 @@ const PipelineCanvasInner = () => {
       }
       // Don't clear selection here - let pane click handle it
     },
-    [dispatch]
+    [dispatch, exportWizardOpen]
   );
 
   // Get node color for minimap
@@ -491,7 +586,7 @@ const PipelineCanvasInner = () => {
 
   return (
     <div
-      className="pipeline-canvas"
+      className={`pipeline-canvas ${isPanMode ? 'pipeline-canvas--pan-mode' : ''}`}
       ref={reactFlowWrapper}
       tabIndex={0}
       style={{ outline: 'none' }}
@@ -500,31 +595,13 @@ const PipelineCanvasInner = () => {
       {/* Empty State - Show when no nodes or datasets */}
       {isEmpty && <EmptyState isDragging={isDraggingOver} />}
 
-      {/* Bulk Actions Toolbar */}
+      {/* Bulk Actions Toolbar - Shows when nodes/datasets/edges are selected */}
       <BulkActionsToolbar
         selectedCount={totalSelected}
         selectedType={selectionType}
         onDelete={handleBulkDelete}
         onClear={handleBulkClear}
       />
-
-      {/* Edge Context Menu */}
-      {contextMenu && (
-        <EdgeContextMenu
-          edgeId={contextMenu.edgeId}
-          x={contextMenu.x}
-          y={contextMenu.y}
-          open={!!contextMenu}
-          onOpenChange={(open) => {
-            if (!open) setContextMenu(null);
-          }}
-          onDelete={() => {
-            dispatch(deleteConnection(contextMenu.edgeId));
-            dispatch(clearConnectionSelection());
-            setContextMenu(null);
-          }}
-        />
-      )}
 
       <ReactFlow
         nodes={nodes}
@@ -538,7 +615,6 @@ const PipelineCanvasInner = () => {
         onDragOver={handleDragOver}
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
-        onEdgeContextMenu={handleEdgeContextMenu}
         onPaneClick={handlePaneClick}
         onSelectionChange={handleSelectionChange}
         nodeTypes={nodeTypes}
@@ -548,13 +624,22 @@ const PipelineCanvasInner = () => {
         minZoom={0.1}
         maxZoom={4}
         selectNodesOnDrag={false}
-        panOnDrag={[1, 2]}
-        selectionOnDrag={true}
-        multiSelectionKeyCode={['Meta', 'Control', 'Shift']}
+        panOnDrag={isPanMode ? true : [2]}
+        selectionOnDrag={!isPanMode && !exportWizardOpen}
+        panOnScroll={false}
+        zoomOnScroll={true}
+        zoomOnPinch={true}
+        zoomOnDoubleClick={false}
+        multiSelectionKeyCode={exportWizardOpen ? null : ['Meta', 'Control', 'Shift']}
         deleteKeyCode={['Delete', 'Backspace']}
         defaultEdgeOptions={{
-          animated: true,
-          style: { strokeWidth: 2, stroke: 'var(--color-connection)' },
+          animated: true,  // Enable animated dotted lines
+          style: {
+            strokeWidth: 3,
+            stroke: 'var(--color-connection)',
+            strokeDasharray: '5, 5'  // Dotted line pattern
+          },
+          interactionWidth: 20,  // Make edges easier to click (ReactFlow API)
         }}
         edgesReconnectable={false}
         proOptions={{ hideAttribution: true }}
@@ -586,8 +671,8 @@ const PipelineCanvasInner = () => {
   );
 };
 
-export const PipelineCanvas = () => (
+export const PipelineCanvas = ({ exportWizardOpen }: PipelineCanvasProps) => (
   <ReactFlowProvider>
-    <PipelineCanvasInner />
+    <PipelineCanvasInner exportWizardOpen={exportWizardOpen} />
   </ReactFlowProvider>
 );

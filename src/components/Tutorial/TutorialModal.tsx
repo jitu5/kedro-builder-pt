@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, ArrowLeft } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { completeTutorial, nextTutorialStep } from '../../features/ui/uiSlice';
+import { completeTutorial, nextTutorialStep, prevTutorialStep } from '../../features/ui/uiSlice';
 import { tutorialSteps } from './tutorialContent';
 import './TutorialModal.scss';
 
@@ -32,6 +32,10 @@ export const TutorialModal = () => {
     } else {
       dispatch(nextTutorialStep());
     }
+  };
+
+  const handleBack = () => {
+    dispatch(prevTutorialStep());
   };
 
   const handleSkip = () => {
@@ -82,18 +86,31 @@ export const TutorialModal = () => {
 
             {/* Action Buttons */}
             <div className="tutorial-modal__actions">
-              <button
-                className="tutorial-modal__button tutorial-modal__button--skip"
-                onClick={handleSkip}
-              >
-                Skip
-              </button>
-              <button
-                className="tutorial-modal__button tutorial-modal__button--primary"
-                onClick={handleNext}
-              >
-                {step.buttonText}
-              </button>
+              <div className="tutorial-modal__actions-left">
+                <button
+                  className="tutorial-modal__button tutorial-modal__button--skip"
+                  onClick={handleSkip}
+                >
+                  Skip tutorial
+                </button>
+              </div>
+              <div className="tutorial-modal__actions-right">
+                {currentStep > 1 && (
+                  <button
+                    className="tutorial-modal__button tutorial-modal__button--back"
+                    onClick={handleBack}
+                  >
+                    <ArrowLeft size={16} />
+                    Back
+                  </button>
+                )}
+                <button
+                  className="tutorial-modal__button tutorial-modal__button--primary"
+                  onClick={handleNext}
+                >
+                  {step.buttonText}
+                </button>
+              </div>
             </div>
           </div>
 

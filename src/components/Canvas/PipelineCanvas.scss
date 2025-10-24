@@ -6,6 +6,23 @@
   background: var(--color-bg-1);
   position: relative;
 
+  // Pan mode cursor (spacebar pressed)
+  &--pan-mode {
+    cursor: grab !important;
+
+    * {
+      cursor: grab !important;
+    }
+
+    &:active {
+      cursor: grabbing !important;
+
+      * {
+        cursor: grabbing !important;
+      }
+    }
+  }
+
   // Override ReactFlow default styles to match Kedro-Viz theme
   .react-flow {
     background: var(--color-bg-1);

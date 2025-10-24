@@ -152,14 +152,19 @@
     transition: all 0.2s ease;
     margin-top: 1rem;
 
-    &:hover {
+    &:hover:not(:disabled) {
       transform: translateY(-2px);
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
       opacity: 0.9;
     }
 
-    &:active {
+    &:active:not(:disabled) {
       transform: translateY(0);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
   }
 

@@ -69,6 +69,14 @@ function generateNodeFunction(
 }
 
 /**
+ * Extract function name from user's Python code
+ */
+function extractFunctionName(code: string): string | null {
+  const match = code.match(/def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/);
+  return match ? match[1] : null;
+}
+
+/**
  * Generate function using user's custom code
  */
 function generateCustomFunction(
@@ -77,11 +85,27 @@ function generateCustomFunction(
   outputs: string[],
   node: KedroNode
 ): string {
+  const userCode = node.functionCode!.trim();
+
+  // Validate that function name in code matches node name
+  const extractedFuncName = extractFunctionName(userCode);
+  if (extractedFuncName && extractedFuncName !== funcName) {
+    // Add a comment warning about the mismatch
+    const warning = `# WARNING: Function name "${extractedFuncName}" in your code does not match node name "${funcName}".\n# The pipeline expects the function to be named "${funcName}". Please update your code.\n\n`;
+
+    // Return the user's code as-is but with a warning
+    return warning + userCode;
+  }
+
+  // If user provided complete function definition, use it as-is
+  if (userCode.includes('def ')) {
+    return userCode;
+  }
+
+  // Otherwise, wrap user's code in a function with proper signature
   const params = formatFunctionParams(inputs);
   const paramDocs = formatDocstringParams(inputs);
   const returnType = getReturnType(outputs);
-
-  const userCode = node.functionCode!.trim();
   const indentedCode = indentCode(userCode, 4);
 
   return `def ${funcName}(${params}) -> ${returnType}:

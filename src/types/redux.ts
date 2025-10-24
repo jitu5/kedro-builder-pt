@@ -58,6 +58,9 @@ export interface UIState {
   showValidationPanel: boolean;
   canvasZoom: number;
   canvasPosition: { x: number; y: number };
+
+  // Pending component tracking (for enforcing config completion)
+  pendingComponentId: { type: 'node' | 'dataset'; id: string } | null;
 }
 
 export interface ValidationState {

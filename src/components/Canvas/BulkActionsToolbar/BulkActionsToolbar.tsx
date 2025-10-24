@@ -18,8 +18,11 @@ export const BulkActionsToolbar: React.FC<BulkActionsToolbarProps> = ({
   onDuplicate,
   onClear,
 }) => {
-  // Only show toolbar when multiple items are selected
-  if (selectedCount === 0 || selectedCount === 1) return null;
+  // Show toolbar for:
+  // - Multiple items (nodes/datasets/edges)
+  // - Single edge (exception: edges don't have config panel)
+  if (selectedCount === 0) return null;
+  if (selectedCount === 1 && selectedType !== 'edges') return null;
 
   return (
     <div className="bulk-actions-toolbar">

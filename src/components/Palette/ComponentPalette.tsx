@@ -8,9 +8,13 @@ type TabType = 'components' | 'templates';
 export const ComponentPalette = () => {
   const [activeTab, setActiveTab] = useState<TabType>('components');
   const hasActiveProject = useAppSelector((state) => state.ui.hasActiveProject);
+  const hasPendingComponent = useAppSelector((state) => state.ui.pendingComponentId !== null);
+
+  // Disable dragging if no project or if there's a pending component
+  const isDragDisabled = !hasActiveProject || hasPendingComponent;
 
   const handleNodeDragStart = (event: React.DragEvent) => {
-    if (!hasActiveProject) {
+    if (isDragDisabled) {
       event.preventDefault();
       return;
     }
@@ -19,7 +23,7 @@ export const ComponentPalette = () => {
   };
 
   const handleDatasetDragStart = (event: React.DragEvent) => {
-    if (!hasActiveProject) {
+    if (isDragDisabled) {
       event.preventDefault();
       return;
     }
@@ -52,12 +56,41 @@ export const ComponentPalette = () => {
 
       <div className="component-palette__section">
         <div className="component-palette__list">
-          {/* Function Node */}
+          {/* Dataset - First for beginners */}
           <div
-            className={`component-card component-card--function ${!hasActiveProject ? 'component-card--disabled' : ''}`}
-            draggable={hasActiveProject}
+            className={`component-card component-card--dataset ${isDragDisabled ? 'component-card--disabled' : ''}`}
+            draggable={!isDragDisabled}
+            onDragStart={handleDatasetDragStart}
+            data-walkthrough="dataset-button"
+            title={
+              !hasActiveProject
+                ? 'Create a project first'
+                : hasPendingComponent
+                ? 'Complete the current component configuration first'
+                : ''
+            }
+          >
+            <div className="component-card__icon">
+              <Database size={20} />
+            </div>
+            <div className="component-card__content">
+              <h4 className="component-card__name">Dataset</h4>
+              <p className="component-card__description">Add a data source or output</p>
+            </div>
+          </div>
+
+          {/* Function Node - Second */}
+          <div
+            className={`component-card component-card--function ${isDragDisabled ? 'component-card--disabled' : ''}`}
+            draggable={!isDragDisabled}
             onDragStart={handleNodeDragStart}
-            title={!hasActiveProject ? 'Create a project first' : ''}
+            title={
+              !hasActiveProject
+                ? 'Create a project first'
+                : hasPendingComponent
+                ? 'Complete the current component configuration first'
+                : ''
+            }
           >
             <div className="component-card__icon">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -69,23 +102,6 @@ export const ComponentPalette = () => {
             <div className="component-card__content">
               <h4 className="component-card__name">Function Node</h4>
               <p className="component-card__description">Create a processing function</p>
-            </div>
-          </div>
-
-          {/* Dataset */}
-          <div
-            className={`component-card component-card--dataset ${!hasActiveProject ? 'component-card--disabled' : ''}`}
-            draggable={hasActiveProject}
-            onDragStart={handleDatasetDragStart}
-            data-walkthrough="dataset-button"
-            title={!hasActiveProject ? 'Create a project first' : ''}
-          >
-            <div className="component-card__icon">
-              <Database size={20} />
-            </div>
-            <div className="component-card__content">
-              <h4 className="component-card__name">Dataset</h4>
-              <p className="component-card__description">Add a data source or output</p>
             </div>
           </div>
         </div>

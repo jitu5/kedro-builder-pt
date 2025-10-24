@@ -24,6 +24,9 @@ const initialState: UIState = {
   showValidationPanel: false,
   canvasZoom: 1,
   canvasPosition: { x: 0, y: 0 },
+
+  // Pending component tracking
+  pendingComponentId: null,
 };
 
 const uiSlice = createSlice({
@@ -39,6 +42,11 @@ const uiSlice = createSlice({
     nextTutorialStep: (state) => {
       if (state.tutorialStep < 5) {
         state.tutorialStep += 1;
+      }
+    },
+    prevTutorialStep: (state) => {
+      if (state.tutorialStep > 1) {
+        state.tutorialStep -= 1;
       }
     },
     completeTutorial: (state) => {
@@ -125,6 +133,16 @@ const uiSlice = createSlice({
     setCanvasPosition: (state, action: PayloadAction<{ x: number; y: number }>) => {
       state.canvasPosition = action.payload;
     },
+    // Pending component actions
+    setPendingComponent: (
+      state,
+      action: PayloadAction<{ type: 'node' | 'dataset'; id: string } | null>
+    ) => {
+      state.pendingComponentId = action.payload;
+    },
+    clearPendingComponent: (state) => {
+      state.pendingComponentId = null;
+    },
   },
 });
 
@@ -133,6 +151,7 @@ export const {
   setShowTutorial,
   setTutorialStep,
   nextTutorialStep,
+  prevTutorialStep,
   completeTutorial,
   openTutorial,
   // Walkthrough actions
@@ -155,6 +174,9 @@ export const {
   setShowValidationPanel,
   setCanvasZoom,
   setCanvasPosition,
+  // Pending component actions
+  setPendingComponent,
+  clearPendingComponent,
 } = uiSlice.actions;
 
 export default uiSlice.reducer;

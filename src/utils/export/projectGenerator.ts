@@ -70,7 +70,7 @@ export async function generateKedroProject(
   // Package root
   zip.file(`src/${pythonPackage}/__init__.py`, generateInitPy());
   zip.file(`src/${pythonPackage}/settings.py`, generateSettings());
-  zip.file(`src/${pythonPackage}/pipeline_registry.py`, generatePipelineRegistry(metadata));
+  zip.file(`src/${pythonPackage}/pipeline_registry.py`, generatePipelineRegistry());
 
   // Pipeline code
   const pipelineDir = `src/${pythonPackage}/pipelines/${pipelineName}`;

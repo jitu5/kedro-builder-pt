@@ -31,7 +31,7 @@ const nodesSlice = createSlice({
         const id = `node-${Date.now()}`;
         const newNode: KedroNode = {
           id,
-          name: 'Unnamed Node',
+          name: '',
           type: payload.type,
           inputs: [],
           outputs: [],
