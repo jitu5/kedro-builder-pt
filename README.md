@@ -62,6 +62,18 @@ The application will be available at [http://localhost:5173/](http://localhost:5
 
 See [PHASE_1_UX_IMPROVEMENTS.md](./PHASE_1_UX_IMPROVEMENTS.md) for complete details.
 
+### ✅ Kedro 1.0.0 Migration (COMPLETE - 2025-01-24)
+**Generated projects now use Kedro 1.0.0 with modern conventions:**
+- ✅ Updated to `kedro[jupyter]~=1.0.0` and `kedro-datasets>=3.0`
+- ✅ Fixed duplicate `__default__` pipeline using `find_pipelines()` pattern
+- ✅ Node names match function names (VSCode plugin compatible)
+- ✅ Tab key support in code editor
+- ✅ 50+ dataset types from kedro-datasets (vs 7 previously)
+- ✅ Real-time function name validation with warnings
+- ✅ Capitalized `Node()` following Kedro 1.0.0 conventions
+
+See [KEDRO_1.0_MIGRATION.md](./KEDRO_1.0_MIGRATION.md) for complete details.
+
 ### 🔄 Next: Phase 2 - Tutorial & UI Polish
 - Tutorial navigation (back button, pagination alignment)
 - Tutorial mode protection

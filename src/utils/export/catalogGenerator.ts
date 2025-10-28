@@ -3,7 +3,7 @@
  */
 
 import type { KedroDataset } from '../../types/kedro';
-import { inferDataLayer, getFileExtension, escapeYamlString } from './helpers';
+import { inferDataLayer, getFileExtension, escapeYamlString, toSnakeCase } from './helpers';
 
 /**
  * Dataset type mapping from UI to Kedro
@@ -16,9 +16,11 @@ const DATASET_TYPE_MAPPING: Record<string, string> = {
   pickle: 'pandas.PickleDataset',
   feather: 'pandas.FeatherDataset',
   hdf: 'pandas.HDFDataset',
-  sql: 'pandas.SQLTableDataset',
+  sql_table: 'pandas.SQLTableDataset',
+  sql_query: 'pandas.SQLQueryDataset',
   text: 'text.TextDataset',
   yaml: 'yaml.YAMLDataset',
+  memory: 'MemoryDataset',
 };
 
 /**
@@ -56,8 +58,14 @@ function generateCatalogEntry(dataset: KedroDataset): string {
     ? DATASET_TYPE_MAPPING[dataset.type.toLowerCase()] || dataset.type
     : 'pandas.CSVDataset';
 
-  // Generate filepath if not provided
-  const filepath = dataset.filepath || inferFilepath(dataset.name, kedroType);
+  // Check if filepath was provided by user
+  const userFilepath = dataset.filepath?.trim();
+
+  // Generate filepath if not provided (auto infer sensible default)
+  const filepath = userFilepath && userFilepath.length > 0
+    ? userFilepath
+    : inferFilepath(datasetName, kedroType);
+  const hasUserFilepath = Boolean(userFilepath && userFilepath.length > 0);
 
   let entry = `${datasetName}:
   type: ${kedroType}`;
@@ -65,6 +73,11 @@ function generateCatalogEntry(dataset: KedroDataset): string {
   // Add filepath for non-memory datasets
   if (kedroType !== 'MemoryDataset') {
     entry += `\n  filepath: ${escapeYamlString(filepath)}`;
+
+    // Add comment if filepath was auto-generated (dummy)
+    if (!hasUserFilepath) {
+      entry += '  # Auto-generated – update with your actual data location';
+    }
   }
 
   // Add layer if specified
@@ -84,8 +97,9 @@ function generateCatalogEntry(dataset: KedroDataset): string {
  * Infer filepath from dataset name and type
  */
 function inferFilepath(name: string, kedroType: string): string {
-  const layer = inferDataLayer(name);
+  const safeName = toSnakeCase(name) || 'dataset';
+  const layer = inferDataLayer(safeName);
   const extension = getFileExtension(kedroType);
 
-  return `data/${layer}/${name}${extension}`;
+  return `data/${layer}/${safeName}${extension}`;
 }

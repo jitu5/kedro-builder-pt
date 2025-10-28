@@ -1,5 +1,5 @@
 import { useForm } from 'react-hook-form';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAppDispatch } from '../../../store/hooks';
 import { updateNode, deleteNode } from '../../../features/nodes/nodesSlice';
 import { clearPendingComponent } from '../../../features/ui/uiSlice';
@@ -33,6 +33,7 @@ const toSnakeCase = (str: string): string => {
 export const NodeConfigForm: React.FC<NodeConfigFormProps> = ({ node, onClose }) => {
   const dispatch = useAppDispatch();
   const [functionNameWarning, setFunctionNameWarning] = useState<string>('');
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const {
     register,
@@ -98,23 +99,30 @@ export const NodeConfigForm: React.FC<NodeConfigFormProps> = ({ node, onClose })
 
   // Handle Tab key in code textarea
   const handleCodeKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Tab') {
-      e.preventDefault();
-      const target = e.currentTarget;
-      const start = target.selectionStart;
-      const end = target.selectionEnd;
-      const value = target.value;
-
-      // Insert 4 spaces at cursor position
-      const newValue = value.substring(0, start) + '    ' + value.substring(end);
-      target.value = newValue;
-
-      // Move cursor after inserted spaces
-      target.selectionStart = target.selectionEnd = start + 4;
-
-      // Update form value and mark as dirty
-      setValue('functionCode', newValue, { shouldDirty: true });
+    if (e.key !== 'Tab') {
+      // Let all other keys work normally - DO NOT interfere
+      return;
     }
+
+    // Only handle Tab key
+    e.preventDefault();
+    const target = e.currentTarget;
+    const start = target.selectionStart;
+    const end = target.selectionEnd;
+    const value = target.value;
+
+    // Insert 4 spaces
+    const newValue = value.substring(0, start) + '    ' + value.substring(end);
+
+    // Use setValue to update the form - this triggers react-hook-form properly
+    setValue('functionCode', newValue, { shouldDirty: true, shouldValidate: true });
+
+    // Update cursor position after React re-renders
+    requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        textareaRef.current.selectionStart = textareaRef.current.selectionEnd = start + 4;
+      }
+    });
   };
 
   return (
@@ -163,8 +171,17 @@ export const NodeConfigForm: React.FC<NodeConfigFormProps> = ({ node, onClose })
           className="node-config-form__textarea node-config-form__textarea--code"
           rows={10}
           placeholder="# Python code for this node function...&#10;# def my_function(input_data):&#10;#     return processed_data"
+          {...register('functionCode', {
+            onChange: () => {
+              // Let react-hook-form handle all changes normally
+            }
+          })}
+          ref={(e) => {
+            // Merge refs: react-hook-form's ref and our ref
+            register('functionCode').ref(e);
+            textareaRef.current = e;
+          }}
           onKeyDown={handleCodeKeyDown}
-          {...register('functionCode')}
         />
         {functionNameWarning && (
           <span className="node-config-form__warning">

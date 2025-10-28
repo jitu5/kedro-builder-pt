@@ -65,8 +65,8 @@ export function inferDataLayer(name: string): string {
   if (lowerName.includes('model_output') || lowerName.includes('prediction')) return '07_model_output';
   if (lowerName.includes('report') || lowerName.includes('metric')) return '08_reporting';
 
-  // Default to intermediate if cannot infer
-  return '02_intermediate';
+  // Default to raw if cannot infer
+  return '01_raw';
 }
 
 /**

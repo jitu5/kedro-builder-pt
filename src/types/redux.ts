@@ -59,6 +59,13 @@ export interface UIState {
   canvasZoom: number;
   canvasPosition: { x: number; y: number };
 
+  // Code viewer state
+  showCodeViewer: boolean;
+  selectedCodeFile: string | null;
+
+  // Export wizard state
+  showExportWizard: boolean;
+
   // Pending component tracking (for enforcing config completion)
   pendingComponentId: { type: 'node' | 'dataset'; id: string } | null;
 }

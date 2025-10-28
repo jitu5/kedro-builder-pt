@@ -25,6 +25,13 @@ const initialState: UIState = {
   canvasZoom: 1,
   canvasPosition: { x: 0, y: 0 },
 
+  // Code viewer state
+  showCodeViewer: false,
+  selectedCodeFile: null,
+
+  // Export wizard state
+  showExportWizard: false,
+
   // Pending component tracking
   pendingComponentId: null,
 };
@@ -133,6 +140,27 @@ const uiSlice = createSlice({
     setCanvasPosition: (state, action: PayloadAction<{ x: number; y: number }>) => {
       state.canvasPosition = action.payload;
     },
+    // Code viewer actions
+    openCodeViewer: (state) => {
+      state.showCodeViewer = true;
+      // Set default file if not set
+      if (!state.selectedCodeFile) {
+        state.selectedCodeFile = 'conf/base/catalog.yml';
+      }
+    },
+    closeCodeViewer: (state) => {
+      state.showCodeViewer = false;
+    },
+    selectCodeFile: (state, action: PayloadAction<string>) => {
+      state.selectedCodeFile = action.payload;
+    },
+    // Export wizard actions
+    openExportWizard: (state) => {
+      state.showExportWizard = true;
+    },
+    closeExportWizard: (state) => {
+      state.showExportWizard = false;
+    },
     // Pending component actions
     setPendingComponent: (
       state,
@@ -174,6 +202,13 @@ export const {
   setShowValidationPanel,
   setCanvasZoom,
   setCanvasPosition,
+  // Code viewer actions
+  openCodeViewer,
+  closeCodeViewer,
+  selectCodeFile,
+  // Export wizard actions
+  openExportWizard,
+  closeExportWizard,
   // Pending component actions
   setPendingComponent,
   clearPendingComponent,

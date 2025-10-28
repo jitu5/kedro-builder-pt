@@ -11,13 +11,70 @@ export type NodeType =
   | 'custom';
 
 export type DatasetType =
+  // Pandas datasets
   | 'csv'
   | 'parquet'
   | 'json'
   | 'excel'
+  | 'feather'
+  | 'hdf'
+  | 'sql_table'
+  | 'sql_query'
+  | 'gbq_table'
+  | 'gbq_query'
+  // Spark datasets
+  | 'spark_dataframe'
+  | 'spark_hive'
+  | 'spark_jdbc'
+  // Delta Lake
+  | 'delta_table'
+  // Pickle datasets
   | 'pickle'
-  | 'memory'
-  | 'sql';
+  // Text datasets
+  | 'text'
+  | 'yaml'
+  // Image datasets
+  | 'image'
+  | 'matplotlib'
+  // NetworkX datasets
+  | 'networkx_json'
+  | 'networkx_gml'
+  | 'networkx_graphml'
+  // Plotly datasets
+  | 'plotly_json'
+  // API datasets
+  | 'api'
+  // Tracking datasets
+  | 'tracking'
+  // Video datasets
+  | 'video'
+  // Polars datasets
+  | 'polars_csv'
+  | 'polars_parquet'
+  | 'polars_lazy'
+  // Dask datasets
+  | 'dask_parquet'
+  | 'dask_csv'
+  // GeoJSON/Shapefile
+  | 'geojson'
+  // BioPython
+  | 'biosequence'
+  // TensorFlow/PyTorch
+  | 'tensorflow'
+  | 'pytorch'
+  // Hugging Face
+  | 'huggingface_dataset'
+  | 'huggingface_model'
+  // MATLAB
+  | 'matlab'
+  // XML
+  | 'xml'
+  // Holoviews
+  | 'holoviews'
+  // Ibis
+  | 'ibis_table'
+  // Memory (In-Memory)
+  | 'memory';
 
 export type DataLayer =
   | '01_raw'

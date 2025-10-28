@@ -246,8 +246,16 @@ const PipelineCanvasInner = ({ exportWizardOpen = false }: PipelineCanvasProps) 
   // Handle keyboard shortcuts (Escape, Cmd+A, and Spacebar for pan mode)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Check if user is typing in an input, textarea, or contentEditable element
+      const target = event.target as HTMLElement;
+      const isEditableElement =
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.contentEditable === 'true';
+
       // Spacebar - enable pan mode (like Figma)
-      if (event.code === 'Space' && !isPanMode) {
+      // BUT: Don't intercept if user is typing in an editable field
+      if (event.code === 'Space' && !isPanMode && !isEditableElement) {
         event.preventDefault();
         setIsPanMode(true);
       }

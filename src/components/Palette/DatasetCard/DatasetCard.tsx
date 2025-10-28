@@ -9,18 +9,19 @@ interface DatasetCardProps {
   description: string;
 }
 
-const DATASET_ICONS: Record<DatasetType, React.ElementType> = {
+const DATASET_ICONS: Partial<Record<DatasetType, React.ElementType>> = {
   csv: Table,
   parquet: Archive,
   json: FileJson,
   excel: FileText,
   pickle: Archive,
   memory: HardDrive,
-  sql: Server,
+  sql_table: Server,
+  sql_query: Server,
 };
 
 export const DatasetCard: React.FC<DatasetCardProps> = ({ type, name, description }) => {
-  const Icon = DATASET_ICONS[type];
+  const Icon = DATASET_ICONS[type] ?? FileText;
 
   const handleDragStart = (event: React.DragEvent) => {
     event.dataTransfer.setData('application/kedro-builder-dataset', type);

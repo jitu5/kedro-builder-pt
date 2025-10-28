@@ -131,8 +131,33 @@ function generateTemplateFunction(
   node: KedroNode
 ): string {
   const params = formatFunctionParams(inputs);
-  const paramDocs = formatDocstringParams(inputs);
   const returnType = getReturnType(outputs);
+
+  // If no inputs and no outputs, generate minimal function with just pass
+  if (inputs.length === 0 && outputs.length === 0) {
+    return `def ${funcName}() -> None:
+    """${node.name || funcName}."""
+    pass`;
+  }
+
+  // If only no outputs (but has inputs), still generate simple function with pass
+  if (outputs.length === 0) {
+    const paramDocs = formatDocstringParams(inputs);
+    return `def ${funcName}(${params}) -> None:
+    """
+    ${node.name || funcName}.
+
+    Args:
+${paramDocs}
+
+    Returns:
+        None
+    """
+    pass`;
+  }
+
+  // Has outputs - generate full template with TODO and processing logic
+  const paramDocs = formatDocstringParams(inputs);
   const functionBody = generatePlaceholderBody(inputs, outputs);
 
   return `def ${funcName}(${params}) -> ${returnType}:

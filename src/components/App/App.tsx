@@ -7,6 +7,9 @@ import {
   startWalkthrough,
   setHasActiveProject,
   openProjectSetup,
+  openCodeViewer,
+  openExportWizard,
+  closeExportWizard,
 } from '../../features/ui/uiSlice';
 import { loadProject } from '../../features/project/projectSlice';
 import { addNode, clearNodes } from '../../features/nodes/nodesSlice';
@@ -25,6 +28,7 @@ import { WalkthroughOverlay } from '../Walkthrough/WalkthroughOverlay';
 import { ProjectSetupModal } from '../ProjectSetup/ProjectSetupModal';
 import { ValidationPanel } from '../ValidationPanel/ValidationPanel';
 import { ExportWizard } from '../ExportWizard/ExportWizard';
+import { CodeViewerModal } from '../CodeViewer';
 import { generateKedroProject, downloadProject } from '../../utils/export';
 import { Code, Download, Edit2 } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
@@ -37,11 +41,11 @@ function App() {
   const showWalkthrough = useAppSelector((state) => state.ui.showWalkthrough);
   const showProjectSetup = useAppSelector((state) => state.ui.showProjectSetup);
   const hasActiveProject = useAppSelector((state) => state.ui.hasActiveProject);
+  const showExportWizard = useAppSelector((state) => state.ui.showExportWizard);
   const currentProject = useAppSelector((state) => state.project.current);
   const nodes = useAppSelector((state) => state.nodes.allIds);
   const datasets = useAppSelector((state) => state.datasets.allIds);
 
-  const [showExportWizard, setShowExportWizard] = useState(false);
   const [exportValidationResult, setExportValidationResult] = useState<ValidationResult | null>(null);
 
   // Check if pipeline has any content (nodes or datasets)
@@ -118,6 +122,16 @@ function App() {
     return () => window.removeEventListener('configUpdated', handleConfigUpdate);
   }, [showExportWizard, dispatch]);
 
+  // Sync export validation result when showExportWizard changes
+  useEffect(() => {
+    if (showExportWizard) {
+      // Get validation results from Redux (already set by CodeViewerModal or handleExport)
+      const state = store.getState();
+      const validationResult = validatePipeline(state);
+      setExportValidationResult(validationResult);
+    }
+  }, [showExportWizard]);
+
   const handleOpenTutorial = () => {
     dispatch(openTutorial());
   };
@@ -125,6 +139,26 @@ function App() {
   // Handler to open ProjectSetupModal for editing
   const handleEditProject = () => {
     dispatch(openProjectSetup());
+  };
+
+  // Handler to open Code Viewer (with validation check)
+  const handleViewCode = () => {
+    // Get current state from store
+    const state = store.getState();
+
+    // Run validation
+    const validationResult = validatePipeline(state);
+
+    // Check if there are any errors
+    if (!validationResult.isValid) {
+      toast.error('Cannot view code: Please fix validation errors first');
+      // Store validation results so user can see them
+      dispatch(setValidationResults(validationResult));
+      return;
+    }
+
+    // Validation passed - open code viewer
+    dispatch(openCodeViewer());
   };
 
   const handleExport = () => {
@@ -140,8 +174,8 @@ function App() {
     // Store validation results in local state for ExportWizard
     setExportValidationResult(validationResult);
 
-    // Open export wizard (it will handle showing validation results)
-    setShowExportWizard(true);
+    // Open export wizard using Redux action
+    dispatch(openExportWizard());
   };
 
   const handleConfirmExport = async (metadata: {
@@ -162,8 +196,8 @@ function App() {
       // Download the file
       downloadProject(zipBlob, metadata.projectName);
 
-      // Close dialog
-      setShowExportWizard(false);
+      // Close dialog using Redux action
+      dispatch(closeExportWizard());
 
       // Clear validation results to remove yellow warning borders
       dispatch(setValidationResults({ errors: [], warnings: [], isValid: true }));
@@ -238,8 +272,9 @@ function App() {
               <button
                 className="app__header-button"
                 data-walkthrough="view-code-button"
-                disabled
-                title="View Code (Coming Soon)"
+                disabled={!hasActiveProject || !hasPipelineContent}
+                onClick={handleViewCode}
+                title="View Generated Code"
               >
                 <Code size={18} />
                 View Code
@@ -277,12 +312,13 @@ function App() {
       <TutorialModal />
       {showWalkthrough && <WalkthroughOverlay />}
       {showProjectSetup && <ProjectSetupModal />}
+      <CodeViewerModal />
       <ValidationPanel />
       {exportValidationResult && (
         <ExportWizard
           isOpen={showExportWizard}
           onClose={() => {
-            setShowExportWizard(false);
+            dispatch(closeExportWizard());
             // Clear validation results to remove yellow warning borders
             dispatch(setValidationResults({ errors: [], warnings: [], isValid: true }));
             setExportValidationResult(null);
