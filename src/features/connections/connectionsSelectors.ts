@@ -1,14 +1,23 @@
+import { createSelector } from '@reduxjs/toolkit';
 import type { RootState } from '../../store';
 import type { KedroConnection } from '../../types/kedro';
 
-export const selectAllConnections = (state: RootState): KedroConnection[] => {
-  return state.connections.allIds.map((id) => state.connections.byId[id]);
-};
+// Base selectors (not memoized - simple property access)
+const selectConnectionsById = (state: RootState) => state.connections.byId;
+const selectConnectionsAllIds = (state: RootState) => state.connections.allIds;
 
-export const selectConnectionById = (state: RootState, connectionId: string): KedroConnection | undefined => {
-  return state.connections.byId[connectionId];
-};
+// Memoized selectors
+export const selectAllConnections = createSelector(
+  [selectConnectionsById, selectConnectionsAllIds],
+  (byId, allIds) => allIds.map((id) => byId[id])
+);
 
-export const selectConnectionsCount = (state: RootState): number => {
-  return state.connections.allIds.length;
-};
+export const selectConnectionById = createSelector(
+  [selectConnectionsById, (_state: RootState, connectionId: string) => connectionId],
+  (byId, connectionId) => byId[connectionId]
+);
+
+export const selectConnectionsCount = createSelector(
+  [selectConnectionsAllIds],
+  (allIds) => allIds.length
+);

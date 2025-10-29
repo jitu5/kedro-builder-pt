@@ -40,12 +40,16 @@ const connectionsSlice = createSlice({
       state.selected = state.selected.filter((connId) => connId !== id);
     },
     deleteConnections: (state, action: PayloadAction<string[]>) => {
-      const ids = action.payload;
-      ids.forEach((id) => {
-        delete state.byId[id];
-        state.allIds = state.allIds.filter((connId) => connId !== id);
-        state.selected = state.selected.filter((connId) => connId !== id);
-      });
+      const idsToDelete = new Set(action.payload);
+
+      // Delete from byId
+      idsToDelete.forEach((id) => delete state.byId[id]);
+
+      // Single pass filter for allIds - O(n) instead of O(n²)
+      state.allIds = state.allIds.filter((id) => !idsToDelete.has(id));
+
+      // Single pass filter for selected - O(n) instead of O(n²)
+      state.selected = state.selected.filter((id) => !idsToDelete.has(id));
     },
     selectConnection: (state, action: PayloadAction<string>) => {
       // Single selection
