@@ -1,19 +1,29 @@
+import { createSelector } from '@reduxjs/toolkit';
 import type { RootState } from '../../store';
 import type { KedroDataset } from '../../types/kedro';
 
-export const selectAllDatasets = (state: RootState): KedroDataset[] => {
-  return state.datasets.allIds.map((id) => state.datasets.byId[id]);
-};
+// Base selectors (not memoized - simple property access)
+const selectDatasetsById = (state: RootState) => state.datasets.byId;
+const selectDatasetsAllIds = (state: RootState) => state.datasets.allIds;
+const selectDatasetsSelected = (state: RootState) => state.datasets.selected;
 
-export const selectDatasetById = (state: RootState, datasetId: string): KedroDataset | undefined => {
-  return state.datasets.byId[datasetId];
-};
+// Memoized selectors
+export const selectAllDatasets = createSelector(
+  [selectDatasetsById, selectDatasetsAllIds],
+  (byId, allIds) => allIds.map((id) => byId[id])
+);
 
-export const selectSelectedDataset = (state: RootState): KedroDataset | null => {
-  const selectedId = state.datasets.selected;
-  return selectedId ? state.datasets.byId[selectedId] : null;
-};
+export const selectDatasetById = createSelector(
+  [selectDatasetsById, (_state: RootState, datasetId: string) => datasetId],
+  (byId, datasetId) => byId[datasetId]
+);
 
-export const selectDatasetsCount = (state: RootState): number => {
-  return state.datasets.allIds.length;
-};
+export const selectSelectedDataset = createSelector(
+  [selectDatasetsById, selectDatasetsSelected],
+  (byId, selectedId) => (selectedId ? byId[selectedId] : null)
+);
+
+export const selectDatasetsCount = createSelector(
+  [selectDatasetsAllIds],
+  (allIds) => allIds.length
+);

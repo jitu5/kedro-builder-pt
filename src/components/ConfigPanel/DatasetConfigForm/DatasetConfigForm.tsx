@@ -1,5 +1,4 @@
 import { useForm } from 'react-hook-form';
-import { useState, useEffect } from 'react';
 import { useAppDispatch } from '../../../store/hooks';
 import { updateDataset, deleteDataset } from '../../../features/datasets/datasetsSlice';
 import { clearPendingComponent } from '../../../features/ui/uiSlice';
@@ -7,6 +6,8 @@ import type { KedroDataset, DatasetType } from '../../../types/kedro';
 import { Button } from '../../UI/Button/Button';
 import { Input } from '../../UI/Input/Input';
 import { FilepathBuilder } from '../../UI/FilepathBuilder/FilepathBuilder';
+import { DatasetTypeSelect } from './DatasetTypeSelect';
+import { useFilepathBuilder } from './hooks/useFilepathBuilder';
 import './DatasetConfigForm.scss';
 
 interface DatasetFormData {
@@ -21,108 +22,6 @@ interface DatasetConfigFormProps {
   dataset: KedroDataset;
   onClose: () => void;
 }
-
-// Comprehensive list of dataset types from kedro-datasets 3.0+
-const DATASET_TYPES: { value: DatasetType; label: string; category: string }[] = [
-  // Pandas datasets (most common)
-  { value: 'csv', label: 'CSV', category: 'Pandas' },
-  { value: 'parquet', label: 'Parquet', category: 'Pandas' },
-  { value: 'json', label: 'JSON', category: 'Pandas' },
-  { value: 'excel', label: 'Excel (XLSX/XLS)', category: 'Pandas' },
-  { value: 'feather', label: 'Feather', category: 'Pandas' },
-  { value: 'hdf', label: 'HDF5', category: 'Pandas' },
-  { value: 'sql_table', label: 'SQL Table', category: 'Pandas' },
-  { value: 'sql_query', label: 'SQL Query', category: 'Pandas' },
-  { value: 'gbq_table', label: 'Google BigQuery Table', category: 'Pandas' },
-  { value: 'gbq_query', label: 'Google BigQuery Query', category: 'Pandas' },
-
-  // Spark datasets
-  { value: 'spark_dataframe', label: 'Spark DataFrame', category: 'Spark' },
-  { value: 'spark_hive', label: 'Spark Hive Table', category: 'Spark' },
-  { value: 'spark_jdbc', label: 'Spark JDBC', category: 'Spark' },
-
-  // Delta Lake
-  { value: 'delta_table', label: 'Delta Table', category: 'Delta Lake' },
-
-  // Polars datasets (modern alternative to pandas)
-  { value: 'polars_csv', label: 'Polars CSV', category: 'Polars' },
-  { value: 'polars_parquet', label: 'Polars Parquet', category: 'Polars' },
-  { value: 'polars_lazy', label: 'Polars LazyFrame', category: 'Polars' },
-
-  // Dask datasets (parallel computing)
-  { value: 'dask_parquet', label: 'Dask Parquet', category: 'Dask' },
-  { value: 'dask_csv', label: 'Dask CSV', category: 'Dask' },
-
-  // Pickle datasets
-  { value: 'pickle', label: 'Pickle (Binary)', category: 'Serialization' },
-
-  // Text datasets
-  { value: 'text', label: 'Text File', category: 'Text' },
-  { value: 'yaml', label: 'YAML', category: 'Text' },
-  { value: 'xml', label: 'XML', category: 'Text' },
-
-  // Image & Visualization
-  { value: 'image', label: 'Image (PNG/JPG/etc)', category: 'Image & Video' },
-  { value: 'matplotlib', label: 'Matplotlib Figure', category: 'Image & Video' },
-  { value: 'plotly_json', label: 'Plotly JSON', category: 'Image & Video' },
-  { value: 'video', label: 'Video', category: 'Image & Video' },
-  { value: 'holoviews', label: 'Holoviews', category: 'Image & Video' },
-
-  // Graph/Network datasets
-  { value: 'networkx_json', label: 'NetworkX JSON', category: 'Graph' },
-  { value: 'networkx_gml', label: 'NetworkX GML', category: 'Graph' },
-  { value: 'networkx_graphml', label: 'NetworkX GraphML', category: 'Graph' },
-
-  // Geospatial
-  { value: 'geojson', label: 'GeoJSON', category: 'Geospatial' },
-
-  // Machine Learning Models
-  { value: 'tensorflow', label: 'TensorFlow Model', category: 'ML Models' },
-  { value: 'pytorch', label: 'PyTorch Model', category: 'ML Models' },
-  { value: 'huggingface_dataset', label: 'Hugging Face Dataset', category: 'ML Models' },
-  { value: 'huggingface_model', label: 'Hugging Face Model', category: 'ML Models' },
-
-  // Specialized formats
-  { value: 'api', label: 'API Dataset', category: 'API & Cloud' },
-  { value: 'tracking', label: 'Tracking Dataset', category: 'API & Cloud' },
-  { value: 'biosequence', label: 'Bio Sequence (BioPython)', category: 'Scientific' },
-  { value: 'matlab', label: 'MATLAB (.mat)', category: 'Scientific' },
-  { value: 'ibis_table', label: 'Ibis Table', category: 'Database' },
-
-  // Memory (no file)
-  { value: 'memory', label: 'Memory (In-Memory)', category: 'Memory' },
-];
-
-// Helper function to parse filepath into parts
-const parseFilepath = (filepath: string): { baseLocation: string; dataLayer: string; fileName: string } => {
-  if (!filepath || filepath.trim() === '') {
-    return { baseLocation: 'data', dataLayer: '01_raw', fileName: '' };
-  }
-
-  const parts = filepath.split('/').filter(Boolean);
-
-  if (parts.length >= 3) {
-    return {
-      baseLocation: parts[0],
-      dataLayer: parts[1],
-      fileName: parts.slice(2).join('/'),
-    };
-  } else if (parts.length === 2) {
-    return {
-      baseLocation: 'data',
-      dataLayer: parts[0],
-      fileName: parts[1],
-    };
-  } else if (parts.length === 1) {
-    return {
-      baseLocation: 'data',
-      dataLayer: '01_raw',
-      fileName: parts[0],
-    };
-  }
-
-  return { baseLocation: 'data', dataLayer: '01_raw', fileName: '' };
-};
 
 export const DatasetConfigForm: React.FC<DatasetConfigFormProps> = ({ dataset, onClose }) => {
   const dispatch = useAppDispatch();
@@ -145,25 +44,11 @@ export const DatasetConfigForm: React.FC<DatasetConfigFormProps> = ({ dataset, o
 
   const watchType = watch('type');
 
-  // Parse initial filepath into parts
-  const initialParts = parseFilepath(dataset.filepath || '');
-  const [baseLocation, setBaseLocation] = useState(initialParts.baseLocation);
-  const [dataLayer, setDataLayer] = useState(initialParts.dataLayer);
-  const [fileName, setFileName] = useState(initialParts.fileName);
-
-  // Update form filepath when parts change
-  useEffect(() => {
-    const base = baseLocation.trim() || 'data';
-    const layer = dataLayer.trim();
-    const file = fileName.trim();
-
-    if (file) {
-      const fullPath = `${base}/${layer}/${file}`;
-      setValue('filepath', fullPath, { shouldDirty: true });
-    } else {
-      setValue('filepath', '', { shouldDirty: true });
-    }
-  }, [baseLocation, dataLayer, fileName, setValue]);
+  // Use custom hook for filepath building
+  const { baseLocation, dataLayer, fileName, setBaseLocation, setDataLayer, setFileName } = useFilepathBuilder({
+    initialFilepath: dataset.filepath || '',
+    setValue,
+  });
 
   const onSubmit = (data: DatasetFormData) => {
     dispatch(
@@ -221,32 +106,7 @@ export const DatasetConfigForm: React.FC<DatasetConfigFormProps> = ({ dataset, o
         />
       </div>
 
-      <div className="dataset-config-form__section">
-        <label className="dataset-config-form__label">
-          Dataset Type <span className="dataset-config-form__required">*</span>
-        </label>
-        <select className="dataset-config-form__select" {...register('type', { required: true })}>
-          {/* Group dataset types by category */}
-          {Object.entries(
-            DATASET_TYPES.reduce((acc, type) => {
-              if (!acc[type.category]) acc[type.category] = [];
-              acc[type.category].push(type);
-              return acc;
-            }, {} as Record<string, typeof DATASET_TYPES>)
-          ).map(([category, types]) => (
-            <optgroup key={category} label={category}>
-              {types.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-        <span className="dataset-config-form__helper">
-          Choose from {DATASET_TYPES.length} supported dataset types from kedro-datasets 3.0+
-        </span>
-      </div>
+      <DatasetTypeSelect register={register} />
 
       {watchType !== 'memory' && (
         <div className="dataset-config-form__section">
@@ -275,11 +135,7 @@ export const DatasetConfigForm: React.FC<DatasetConfigFormProps> = ({ dataset, o
       {watchType !== 'memory' && (
         <div className="dataset-config-form__section">
           <label className="dataset-config-form__checkbox-label">
-            <input
-              type="checkbox"
-              className="dataset-config-form__checkbox"
-              {...register('versioned')}
-            />
+            <input type="checkbox" className="dataset-config-form__checkbox" {...register('versioned')} />
             <span className="dataset-config-form__checkbox-text">
               Enable versioning
               <span className="dataset-config-form__helper dataset-config-form__helper--inline">

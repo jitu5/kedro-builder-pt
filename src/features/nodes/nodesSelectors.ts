@@ -1,19 +1,29 @@
+import { createSelector } from '@reduxjs/toolkit';
 import type { RootState } from '../../store';
 import type { KedroNode } from '../../types/kedro';
 
-export const selectAllNodes = (state: RootState): KedroNode[] => {
-  return state.nodes.allIds.map((id) => state.nodes.byId[id]);
-};
+// Base selectors (not memoized - simple property access)
+const selectNodesById = (state: RootState) => state.nodes.byId;
+const selectNodesAllIds = (state: RootState) => state.nodes.allIds;
+const selectNodesSelected = (state: RootState) => state.nodes.selected;
 
-export const selectNodeById = (state: RootState, nodeId: string): KedroNode | undefined => {
-  return state.nodes.byId[nodeId];
-};
+// Memoized selectors
+export const selectAllNodes = createSelector(
+  [selectNodesById, selectNodesAllIds],
+  (byId, allIds) => allIds.map((id) => byId[id])
+);
 
-export const selectSelectedNode = (state: RootState): KedroNode | null => {
-  const selectedIds = state.nodes.selected;
-  return selectedIds.length > 0 ? state.nodes.byId[selectedIds[0]] : null;
-};
+export const selectNodeById = createSelector(
+  [selectNodesById, (_state: RootState, nodeId: string) => nodeId],
+  (byId, nodeId) => byId[nodeId]
+);
 
-export const selectNodesCount = (state: RootState): number => {
-  return state.nodes.allIds.length;
-};
+export const selectSelectedNode = createSelector(
+  [selectNodesById, selectNodesSelected],
+  (byId, selectedIds) => (selectedIds.length > 0 ? byId[selectedIds[0]] : null)
+);
+
+export const selectNodesCount = createSelector(
+  [selectNodesAllIds],
+  (allIds) => allIds.length
+);
