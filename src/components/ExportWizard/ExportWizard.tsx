@@ -125,34 +125,37 @@ export const ExportWizard: React.FC<ExportWizardProps> = ({
         </button>
       </div>
 
-      {/* Step Indicator */}
-      <StepIndicator
-        currentStep={currentStep}
-        validationPassed={!hasErrors}
-      />
+      {/* Main Body with Steps and Content */}
+      <div className="export-wizard__body">
+        {/* Step Indicator */}
+        <StepIndicator
+          currentStep={currentStep}
+          validationPassed={!hasErrors}
+        />
 
-      {/* Step Content */}
-      <div className="export-wizard__content">
-        {currentStep === 'validation' && (
-          <ValidationStepContent
-            validationResult={validationResult}
-            onContinue={handleContinue}
-            onClose={onClose}
-          />
-        )}
+        {/* Step Content */}
+        <div className="export-wizard__content">
+          {currentStep === 'validation' && (
+            <ValidationStepContent
+              validationResult={validationResult}
+              onContinue={handleContinue}
+              onClose={onClose}
+            />
+          )}
 
-        {currentStep === 'configure' && (
-          <ConfigureStepContent
-            projectName={projectName}
-            nodesCount={nodesCount}
-            datasetsCount={datasetsCount}
-            hasWarnings={hasWarnings}
-            warningsCount={validationResult.warnings.length}
-            onProjectNameChange={setProjectName}
-            onBack={handleBack}
-            onExport={handleConfirmExport}
-          />
-        )}
+          {currentStep === 'configure' && (
+            <ConfigureStepContent
+              projectName={projectName}
+              nodesCount={nodesCount}
+              datasetsCount={datasetsCount}
+              hasWarnings={hasWarnings}
+              warningsCount={validationResult.warnings.length}
+              onProjectNameChange={setProjectName}
+              onBack={handleBack}
+              onExport={handleConfirmExport}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

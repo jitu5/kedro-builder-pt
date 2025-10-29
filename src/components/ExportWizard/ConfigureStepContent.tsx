@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, AlertTriangle, Package, FileCode } from 'lucide-react';
+import { Download, Database, FunctionSquare, GitBranch } from 'lucide-react';
 
 interface ConfigureStepContentProps {
   projectName: string;
@@ -16,78 +16,89 @@ export const ConfigureStepContent: React.FC<ConfigureStepContentProps> = ({
   projectName,
   nodesCount,
   datasetsCount,
-  hasWarnings,
-  warningsCount,
   onProjectNameChange,
   onBack,
   onExport,
 }) => {
   const isValid = projectName.trim() !== '' && /^[a-zA-Z0-9_-]+$/.test(projectName);
+  const pipelinesCount = 1; // Always 1 pipeline for now
 
   return (
     <div className="export-wizard__configure">
-      {/* Warning Banner if warnings exist */}
-      {hasWarnings && (
-        <div className="export-wizard__warning-banner">
-          <AlertTriangle size={18} />
-          <span>
-            Exporting with {warningsCount} {warningsCount === 1 ? 'warning' : 'warnings'}.
-            Generated code will need implementation.
-          </span>
-        </div>
-      )}
-
-      {/* Project Summary */}
-      <div className="export-wizard__summary">
-        <h3>Project Summary</h3>
-        <div className="export-wizard__summary-stats">
-          <div className="export-wizard__summary-stat">
-            <FileCode size={20} />
-            <div>
-              <span className="export-wizard__summary-label">Nodes</span>
-              <span className="export-wizard__summary-value">{nodesCount}</span>
-            </div>
+      {/* Summary Cards */}
+      <div className="export-wizard__summary-cards">
+        <div className="export-wizard__summary-card">
+          <div className="export-wizard__summary-card-icon">
+            <Database size={24} />
           </div>
-          <div className="export-wizard__summary-stat">
-            <Package size={20} />
-            <div>
-              <span className="export-wizard__summary-label">Datasets</span>
-              <span className="export-wizard__summary-value">{datasetsCount}</span>
-            </div>
+          <div className="export-wizard__summary-card-content">
+            <div className="export-wizard__summary-card-label">Datasets</div>
+            <div className="export-wizard__summary-card-value">{datasetsCount}</div>
+          </div>
+        </div>
+
+        <div className="export-wizard__summary-card">
+          <div className="export-wizard__summary-card-icon">
+            <FunctionSquare size={24} />
+          </div>
+          <div className="export-wizard__summary-card-content">
+            <div className="export-wizard__summary-card-label">Nodes</div>
+            <div className="export-wizard__summary-card-value">{nodesCount}</div>
+          </div>
+        </div>
+
+        <div className="export-wizard__summary-card">
+          <div className="export-wizard__summary-card-icon">
+            <GitBranch size={24} />
+          </div>
+          <div className="export-wizard__summary-card-content">
+            <div className="export-wizard__summary-card-label">Pipelines</div>
+            <div className="export-wizard__summary-card-value">{pipelinesCount}</div>
           </div>
         </div>
       </div>
 
-      {/* Configuration Form */}
-      <div className="export-wizard__form">
-        <div className="export-wizard__field">
-          <label htmlFor="project-name">Project Name *</label>
-          <input
-            id="project-name"
-            type="text"
-            value={projectName}
-            onChange={(e) => onProjectNameChange(e.target.value)}
-            placeholder="my-kedro-project"
-          />
-          {!isValid && projectName && (
-            <small className="export-wizard__field-error">
-              Only letters, numbers, hyphens, and underscores allowed
-            </small>
-          )}
-          <small>This will be used as your project directory name</small>
-        </div>
-      </div>
+      {/* Two Column Layout */}
+      <div className="export-wizard__configure-content">
+        {/* Left Column: Form */}
+        <div className="export-wizard__configure-left">
+          <div className="export-wizard__field">
+            <label htmlFor="project-name">Kedro project name*</label>
+            <input
+              id="project-name"
+              type="text"
+              value={projectName}
+              onChange={(e) => onProjectNameChange(e.target.value)}
+              placeholder="my-first-project"
+            />
+            {!isValid && projectName && (
+              <small className="export-wizard__field-error">
+                Only letters, numbers, hyphens, and underscores allowed
+              </small>
+            )}
+          </div>
 
-      {/* What will be generated */}
-      <div className="export-wizard__info">
-        <h4>What will be generated:</h4>
-        <ul>
-          <li>Complete Kedro project structure</li>
-          <li>Pipeline code (nodes.py, pipeline.py)</li>
-          <li>Data catalog configuration</li>
-          <li>Project configuration files</li>
-          <li>README with setup instructions</li>
-        </ul>
+          <div className="export-wizard__field">
+            <label htmlFor="description">Description</label>
+            <textarea
+              id="description"
+              placeholder="Add text"
+              rows={4}
+            />
+          </div>
+        </div>
+
+        {/* Right Column: What will be exported */}
+        <div className="export-wizard__configure-right">
+          <h4>What will be exported:</h4>
+          <ul className="export-wizard__export-list">
+            <li>Complete Kedro project structure</li>
+            <li>Pipeline code (nodes.py, pipeline.py)</li>
+            <li>Data catalog configuration</li>
+            <li>Project configuration files</li>
+            <li>README with setup instructions</li>
+          </ul>
+        </div>
       </div>
 
       {/* Action Buttons */}
@@ -96,7 +107,7 @@ export const ConfigureStepContent: React.FC<ConfigureStepContentProps> = ({
           className="export-wizard__button export-wizard__button--secondary"
           onClick={onBack}
         >
-          ← Back
+          Back
         </button>
         <button
           className="export-wizard__button export-wizard__button--primary"

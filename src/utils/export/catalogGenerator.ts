@@ -85,10 +85,10 @@ function generateCatalogEntry(dataset: KedroDataset): string {
     entry += `\n  layer: ${dataset.layer}`;
   }
 
-  // Add versioning if needed (optional for future enhancement)
-  // if (dataset.versioned) {
-  //   entry += `\n  versioned: true`;
-  // }
+  // Add versioning if enabled (time-travel and audit trails)
+  if (dataset.versioned && kedroType !== 'MemoryDataset') {
+    entry += `\n  versioned: true`;
+  }
 
   return entry;
 }

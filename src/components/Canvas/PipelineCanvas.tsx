@@ -90,6 +90,13 @@ const PipelineCanvasInner = ({ exportWizardOpen = false }: PipelineCanvasProps) 
   // Track spacebar press for pan mode (like Figma)
   const [isPanMode, setIsPanMode] = useState(false);
 
+  // Track connection state for visual feedback
+  const [connectionState, setConnectionState] = useState<{
+    source: string | null;
+    target: string | null;
+    isValid: boolean;
+  }>({ source: null, target: null, isValid: true });
+
   // Ref for ReactFlow wrapper to handle focus
   const reactFlowWrapper = useCallback((node: HTMLDivElement | null) => {
     if (node) {
@@ -340,6 +347,72 @@ const PipelineCanvasInner = ({ exportWizardOpen = false }: PipelineCanvasProps) 
     },
     [onNodesChange, dispatch]
   );
+
+  // Validate connections in real-time (prevent invalid connections)
+  const isValidConnection = useCallback((connection: Connection) => {
+    if (!connection.source || !connection.target) return false;
+
+    const isSourceNode = connection.source.startsWith('node-');
+    const isSourceDataset = connection.source.startsWith('dataset-');
+    const isTargetNode = connection.target.startsWith('node-');
+    const isTargetDataset = connection.target.startsWith('dataset-');
+
+    // Only allow: node → dataset OR dataset → node
+    // Block: node → node OR dataset → dataset
+    if (isSourceNode && isTargetDataset) return true;
+    if (isSourceDataset && isTargetNode) return true;
+
+    return false;
+  }, []);
+
+  // Handle connection start - track source node
+  const handleConnectStart = useCallback((_event: any, params: { nodeId: string | null; handleType: string | null }) => {
+    if (params.nodeId) {
+      setConnectionState({
+        source: params.nodeId,
+        target: null,
+        isValid: true,
+      });
+    }
+  }, []);
+
+  // Handle connection end - reset state
+  const handleConnectEnd = useCallback(() => {
+    setConnectionState({ source: null, target: null, isValid: true });
+  }, []);
+
+  // Handle node mouse enter - check if connection would be valid
+  const handleNodeMouseEnter = useCallback(
+    (_event: React.MouseEvent, node: Node) => {
+      if (connectionState.source && node.id !== connectionState.source) {
+        // Check if this connection would be valid
+        const valid = isValidConnection({
+          source: connectionState.source,
+          target: node.id,
+          sourceHandle: null,
+          targetHandle: null,
+        });
+
+        setConnectionState({
+          source: connectionState.source,
+          target: node.id,
+          isValid: valid,
+        });
+      }
+    },
+    [connectionState.source, isValidConnection]
+  );
+
+  // Handle node mouse leave - reset target
+  const handleNodeMouseLeave = useCallback(() => {
+    if (connectionState.source) {
+      setConnectionState({
+        source: connectionState.source,
+        target: null,
+        isValid: true,
+      });
+    }
+  }, [connectionState.source]);
 
   // Handle new connections
   const handleConnect = useCallback(
@@ -594,7 +667,11 @@ const PipelineCanvasInner = ({ exportWizardOpen = false }: PipelineCanvasProps) 
 
   return (
     <div
-      className={`pipeline-canvas ${isPanMode ? 'pipeline-canvas--pan-mode' : ''}`}
+      className={`pipeline-canvas ${isPanMode ? 'pipeline-canvas--pan-mode' : ''} ${
+        connectionState.source && connectionState.target && !connectionState.isValid
+          ? 'pipeline-canvas--invalid-connection'
+          : ''
+      }`}
       ref={reactFlowWrapper}
       tabIndex={0}
       style={{ outline: 'none' }}
@@ -619,6 +696,11 @@ const PipelineCanvasInner = ({ exportWizardOpen = false }: PipelineCanvasProps) 
         onNodesDelete={handleNodesDelete}
         onEdgesDelete={handleEdgesDelete}
         onConnect={handleConnect}
+        isValidConnection={isValidConnection}
+        onConnectStart={handleConnectStart}
+        onConnectEnd={handleConnectEnd}
+        onNodeMouseEnter={handleNodeMouseEnter}
+        onNodeMouseLeave={handleNodeMouseLeave}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onNodeClick={handleNodeClick}

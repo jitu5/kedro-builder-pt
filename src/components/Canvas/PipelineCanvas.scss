@@ -138,15 +138,39 @@
     }
   }
 
-  // Handle connection line styling
-  .react-flow__connection-path {
-    stroke: var(--color-primary);
-    stroke-width: 2;
-  }
-
   // Zoom pane overlay
   .react-flow__pane {
     cursor: default;
+  }
+
+  // Connection line styling
+  .react-flow__connectionline {
+    .react-flow__connection-path {
+      stroke: var(--color-primary);
+      stroke-width: 3;
+      stroke-dasharray: 5, 5;
+    }
+  }
+
+  // Invalid connection visual feedback
+  &--invalid-connection {
+    .react-flow__connectionline {
+      .react-flow__connection-path {
+        stroke: var(--color-error) !important;
+        stroke-width: 4 !important;
+        animation: invalidConnectionPulse 0.6s ease-in-out infinite;
+      }
+    }
+  }
+}
+
+// Animation for invalid connection
+@keyframes invalidConnectionPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
   }
 }
 

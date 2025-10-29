@@ -14,6 +14,7 @@ interface DatasetFormData {
   type: DatasetType;
   filepath?: string;
   description?: string;
+  versioned?: boolean;
 }
 
 interface DatasetConfigFormProps {
@@ -138,6 +139,7 @@ export const DatasetConfigForm: React.FC<DatasetConfigFormProps> = ({ dataset, o
       type: dataset.type || 'csv',
       filepath: dataset.filepath || '',
       description: dataset.description || '',
+      versioned: dataset.versioned || false,
     },
   });
 
@@ -172,6 +174,7 @@ export const DatasetConfigForm: React.FC<DatasetConfigFormProps> = ({ dataset, o
           type: data.type,
           filepath: data.type !== 'memory' ? data.filepath?.trim() : undefined,
           description: data.description?.trim(),
+          versioned: data.versioned || false,
         },
       })
     );
@@ -268,6 +271,24 @@ export const DatasetConfigForm: React.FC<DatasetConfigFormProps> = ({ dataset, o
           {...register('description')}
         />
       </div>
+
+      {watchType !== 'memory' && (
+        <div className="dataset-config-form__section">
+          <label className="dataset-config-form__checkbox-label">
+            <input
+              type="checkbox"
+              className="dataset-config-form__checkbox"
+              {...register('versioned')}
+            />
+            <span className="dataset-config-form__checkbox-text">
+              Enable versioning
+              <span className="dataset-config-form__helper dataset-config-form__helper--inline">
+                Kedro will create timestamped versions for time-travel and audit trails
+              </span>
+            </span>
+          </label>
+        </div>
+      )}
 
       <div className="dataset-config-form__actions">
         <Button type="button" variant="danger" onClick={handleDelete}>

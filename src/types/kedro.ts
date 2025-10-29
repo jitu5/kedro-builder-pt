@@ -117,6 +117,7 @@ export interface KedroDataset {
   layer?: DataLayer;
   catalogConfig?: Record<string, unknown>;
   description?: string;
+  versioned?: boolean;
   position: { x: number; y: number };
   [key: string]: unknown;
 }
